@@ -9,6 +9,10 @@
 #include <vector>
 using std::mt19937;
 
+// 本 fork 修改（2026-09-21，详见 ADAPTATION.md）：Dell G16 7630 的灯控固件只显示「最后一次
+// Play 的那一帧」，而上游每个灯效只写 SendAnimationSetDefault、从不 Play，于是改颜色、换灯效在
+// 键盘上没有任何反应。下面每个灯效在 Save + SetDefault 之后都补一次 Play 0x0061。
+
 EffectController::~EffectController() {
     m_lightfx.deviceClose();
     LOG_S(INFO) << "Effect Controller deinitialized";
@@ -59,6 +63,7 @@ void EffectController::StaticColor(uint32_t color) {
     }
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -76,6 +81,7 @@ void EffectController::Breathe(uint32_t color) {
     }
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -96,6 +102,7 @@ void EffectController::Spectrum(uint16_t duration) {
     }
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -116,6 +123,7 @@ void EffectController::Wave(uint32_t color) {
 
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -147,6 +155,7 @@ void EffectController::Rainbow(uint16_t duration) {
 
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -179,6 +188,7 @@ void EffectController::BackAndForth(uint32_t color) {
 
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
@@ -193,6 +203,7 @@ void EffectController::DefaultBlue() {
     }
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
+    m_lightfx.SendAnimationPlay(0x0061);
     m_lightfx.deviceRelease();
 }
 
