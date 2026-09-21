@@ -84,11 +84,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 # ===================== ImGui =====================
+# 本 fork 修改（2026-09-21，详见 ADAPTATION.md）：上游这里是 GIT_TAG master。imgui master 是
+# 1.93 WIP，2026-09 那批提交里取色器（ColorEdit 的弹窗）在本机渲染成全黑，所以钉回 v1.19.0
+# 发布时（2026-06-04）CI 取到的那个提交。钉 SHA 不能用浅克隆，故 GIT_SHALLOW 关掉。
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG master
-  GIT_SHALLOW TRUE)
+  GIT_TAG 6acba3b47d2ac4c7bb5ffb6ab04bcd896b3d3658
+  GIT_SHALLOW FALSE)
 FetchContent_MakeAvailable(imgui)
 
 add_library(imgui STATIC)
