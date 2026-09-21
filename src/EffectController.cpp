@@ -9,9 +9,12 @@
 #include <vector>
 using std::mt19937;
 
-// 本 fork 修改（2026-09-21，详见 ADAPTATION.md）：Dell G16 7630 的灯控固件只显示「最后一次
-// Play 的那一帧」，而上游每个灯效只写 SendAnimationSetDefault、从不 Play，于是改颜色、换灯效在
-// 键盘上没有任何反应。下面每个灯效在 Save + SetDefault 之后都补一次 Play 0x0061。
+// 本 fork 修改（2026-09-21，详见 ADAPTATION.md）：针对 Dell G16 7630 实测的两条固件行为。
+//   1) 固件只显示「最后一次 Play 的那一帧」。AWCC 原来只写 SendAnimationSetDefault、
+//      从不 Play，所以改颜色/换灯效在键盘上完全没反应 —— 每个灯效末尾都补 Play 0x0061。
+//   2) 固件只认「一次选满全部 zone」的 ZoneSelect；逐个 zone 单独选会被忽略
+//      （上游 issue #8 的 G16 7630 用户也是同样结论）—— 所有灯效都改成一次 SendZoneSelect
+//      选中 m_zoneAll，动作序列只发一遍。
 
 EffectController::~EffectController() {
     m_lightfx.deviceClose();
@@ -56,11 +59,8 @@ void EffectController::StaticColor(uint32_t color) {
     m_lightfx.deviceAcquire();
     m_lightfx.SendAnimationRemove(0x0061);
     m_lightfx.SendAnimationConfigStart(0x0061);
-    for (uint8_t zoneId : m_zoneAll) {
-        std::vector<uint8_t> zone = {zoneId};
-        m_lightfx.SendZoneSelect(1, std::span<const uint8_t>(zone));
-        m_lightfx.SendAddAction(m_actionColor, 1, 2, color);
-    }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    m_lightfx.SendAddAction(m_actionColor, 1, 2, color);
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
     m_lightfx.SendAnimationPlay(0x0061);
@@ -71,14 +71,11 @@ void EffectController::Breathe(uint32_t color) {
     m_lightfx.deviceAcquire();
     m_lightfx.SendAnimationRemove(0x0061);
     m_lightfx.SendAnimationConfigStart(0x0061);
-    for (uint8_t zoneId : m_zoneAll) {
-        std::vector<uint8_t> zone = {zoneId};
-        m_lightfx.SendZoneSelect(1, std::span<const uint8_t>(zone));
-        m_lightfx.SendAddAction(m_actionMorph, 500, 64, color);
-        m_lightfx.SendAddAction(m_actionMorph, 2000, 64, color);
-        m_lightfx.SendAddAction(m_actionMorph, 500, 64, 0);
-        m_lightfx.SendAddAction(m_actionMorph, 2000, 64, 0);
-    }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    m_lightfx.SendAddAction(m_actionMorph, 500, 64, color);
+    m_lightfx.SendAddAction(m_actionMorph, 2000, 64, color);
+    m_lightfx.SendAddAction(m_actionMorph, 500, 64, 0);
+    m_lightfx.SendAddAction(m_actionMorph, 2000, 64, 0);
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
     m_lightfx.SendAnimationPlay(0x0061);
@@ -89,17 +86,14 @@ void EffectController::Spectrum(uint16_t duration) {
     m_lightfx.deviceAcquire();
     m_lightfx.SendAnimationRemove(0x0061);
     m_lightfx.SendAnimationConfigStart(0x0061);
-    for (uint8_t zoneId : m_zoneAll) {
-        std::vector<uint8_t> zone = {zoneId};
-        m_lightfx.SendZoneSelect(1, std::span<const uint8_t>(zone));
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFF0000);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFFA500);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFFFF00);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x008000);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x00BFFF);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x0000FF);
-        m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x800080);
-    }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFF0000);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFFA500);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0xFFFF00);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x008000);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x00BFFF);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x0000FF);
+    m_lightfx.SendAddAction(m_actionMorph, duration, 64, 0x800080);
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
     m_lightfx.SendAnimationPlay(0x0061);
@@ -112,13 +106,9 @@ void EffectController::Wave(uint32_t color) {
     m_lightfx.SendAnimationConfigStart(0x0061);
 
     const size_t n = m_zoneAll.size();
-    for (size_t i = 0; i < n; ++i) {
-        std::vector<uint8_t> zone = {m_zoneAll[i]};
-        m_lightfx.SendZoneSelect(1, zone);
-        for (size_t j = 0; j < n; ++j) {
-            m_lightfx.SendAddAction(m_actionMorph, 500, 64,
-                                    (i == j) ? color : 0);
-        }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    for (size_t j = 0; j < n; ++j) {
+        m_lightfx.SendAddAction(m_actionMorph, 500, 64, (j == 0) ? color : 0);
     }
 
     m_lightfx.SendAnimationConfigSave(0x0061);
@@ -142,15 +132,9 @@ void EffectController::Rainbow(uint16_t duration) {
         0x800080  // Purple
     };
 
-    const size_t n = m_zoneAll.size();
-    for (size_t i = 0; i < n; ++i) {
-        std::vector<uint8_t> zone = {m_zoneAll[i]};
-        m_lightfx.SendZoneSelect(1, zone);
-        for (size_t j = 0; j < colors.size(); ++j) {
-            size_t colorIndex = (i + j) % colors.size();
-            m_lightfx.SendAddAction(m_actionMorph, duration, 64,
-                                    colors[colorIndex]);
-        }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    for (size_t j = 0; j < colors.size(); ++j) {
+        m_lightfx.SendAddAction(m_actionMorph, duration, 64, colors[j]);
     }
 
     m_lightfx.SendAnimationConfigSave(0x0061);
@@ -173,13 +157,10 @@ void EffectController::BackAndForth(uint32_t color) {
         for (size_t i = n - 2; i > 0; --i)
             sequence.push_back(i);
 
-        for (size_t i = 0; i < n; ++i) {
-            std::vector<uint8_t> zone = {m_zoneAll[i]};
-            m_lightfx.SendZoneSelect(1, zone);
-            for (size_t step : sequence) {
-                m_lightfx.SendAddAction(m_actionMorph, 500, 64,
-                                        (i == step) ? color : 0);
-            }
+        m_lightfx.SendZoneSelect(1, m_zoneAll);
+        for (size_t step : sequence) {
+            m_lightfx.SendAddAction(m_actionMorph, 500, 64,
+                                    (step == 0) ? color : 0);
         }
     } else if (n == 1) {
         StaticColor(color);
@@ -196,11 +177,8 @@ void EffectController::DefaultBlue() {
     m_lightfx.deviceAcquire();
     m_lightfx.SendAnimationRemove(0x0061);
     m_lightfx.SendAnimationConfigStart(0x0061);
-    for (uint8_t zoneId : m_zoneAll) {
-        std::vector<uint8_t> zone = {zoneId};
-        m_lightfx.SendZoneSelect(1, std::span<const uint8_t>(zone));
-        m_lightfx.SendAddAction(m_actionColor, 2000, 250, 0x00FFFF);
-    }
+    m_lightfx.SendZoneSelect(1, m_zoneAll);
+    m_lightfx.SendAddAction(m_actionColor, 2000, 250, 0x00FFFF);
     m_lightfx.SendAnimationConfigSave(0x0061);
     m_lightfx.SendAnimationSetDefault(0x0061);
     m_lightfx.SendAnimationPlay(0x0061);
