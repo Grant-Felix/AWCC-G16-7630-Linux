@@ -1,9 +1,12 @@
-# AWCC for Alienware & Dell G series devices 🚀
+# AWCC-G16-7630-Linux
 
-> **本仓库是 fork**：针对 **Dell G16 7630** 做了适配（灯效下发与 imgui 版本两处），
-> 上游为 [tr1xem/AWCC](https://github.com/tr1xem/AWCC)。改动清单、构建与上游同步方式见
-> [`ADAPTATION.md`](ADAPTATION.md)。本 fork 同样**与 Dell 没有任何关联**，也不代表上游作者的立场；
-> 通用问题请反馈上游，fork 相关的问题在本仓库提。
+> **这是 fork，名字即范围**：本仓库只针对 **Dell G16 7630**（Intel、ACPI 前缀 `AMWW`、单区 RGB 键盘）
+> 做过验证，**其他机型不保证能用**——本 fork 作者没有其他设备可测，行为差异请自行判断。
+> 适用范围与已知限制见 [`ADAPTATION.md`](ADAPTATION.md)。
+>
+> 上游为 [tr1xem/AWCC](https://github.com/tr1xem/AWCC)（GPL-3.0）。本 fork 与 Dell **没有任何关联**，
+> 也不代表上游作者的立场；通用问题请反馈上游，fork 相关的问题在本仓库提。
+> 如果你的机型不是 G16 7630，建议直接用上游版本。
 
 [![Build and Upload](https://github.com/tr1xem/AWCC/actions/workflows/build.yml/badge.svg)](https://github.com/tr1xem/AWCC/actions/workflows/build.yml)
 
