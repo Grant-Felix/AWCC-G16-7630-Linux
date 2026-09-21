@@ -1,5 +1,10 @@
 # AWCC for Alienware & Dell G series devices 🚀
 
+> **本仓库是 fork**：针对 **Dell G16 7630** 做了适配（灯效下发与 imgui 版本两处），
+> 上游为 [tr1xem/AWCC](https://github.com/tr1xem/AWCC)。改动清单、构建与上游同步方式见
+> [`ADAPTATION.md`](ADAPTATION.md)。本 fork 同样**与 Dell 没有任何关联**，也不代表上游作者的立场；
+> 通用问题请反馈上游，fork 相关的问题在本仓库提。
+
 [![Build and Upload](https://github.com/tr1xem/AWCC/actions/workflows/build.yml/badge.svg)](https://github.com/tr1xem/AWCC/actions/workflows/build.yml)
 
 AWCC\* is an unofficial alternative to Alienware Command Centre of Windows for
