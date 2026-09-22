@@ -1,6 +1,7 @@
 #include "Ui.h"
 
 #include "AcpiUtils.h"
+#include "Config.h"
 #include "EffectController.h"
 #include "Thermals.h"
 #include "database.h"
@@ -69,6 +70,12 @@ struct AppContext {
     GtkWidget *stack = nullptr;
     GtkWidget *crumbMain = nullptr;
     GtkWidget *crumbSub = nullptr;
+    // 用户配置（背景等）与运行期注入的背景 CSS
+    Config::Ui config;
+    GtkCssProvider *backgroundProvider = nullptr;
+    GtkWidget *bgColorRow = nullptr; // 「外观」页里两行的可用性随背景模式变
+    GtkWidget *bgImageRow = nullptr;
+    GtkWidget *bgImageLabel = nullptr;
     // 服务层（main.cpp 传进来，不持有所有权）
     Thermals *thermals = nullptr;
     AcpiUtils *acpi = nullptr;
@@ -95,6 +102,8 @@ struct AppContext {
     bool selftest = false;
     std::string snapshotPath;      // --ui-snapshot=<路径>：把窗口渲染成 PNG（见下）
     std::string initialPage;       // --ui-page=<name>：启动时停在哪一页（截图/自检用）
+    bool forceLight = false;       // --ui-force-light：强制按亮色渲染（验证亮色配色用）
+    std::string initialSubPage;    // --ui-subpage=<name>：连子页一起指定（截图用）
     bool selftestReported = false; // 首帧已经处理过一次（等真实分配，不用固定延时）
     bool error = false;
     std::vector<std::string> pageLog;
@@ -151,8 +160,10 @@ IconGroup &addIconGroup(AppContext &ctx, double ratio, int minPx, int maxPx) {
 
 // ── 小工具 ──────────────────────────────────────────────────────────────────
 
+// 注意这里对传入串做 gettext 查表：调用方可以直接写 N_("Color")。对已经翻好的串再查一次
+// 是无害的（查不到就原样返回），动态串（如配置路径）同理。
 GtkWidget *makeLabel(const char *text, const char *cssClass) {
-    GtkWidget *label = gtk_label_new(text);
+    GtkWidget *label = gtk_label_new(_(text));
     if (cssClass != nullptr) {
         gtk_widget_add_css_class(label, cssClass);
     }
@@ -161,7 +172,7 @@ GtkWidget *makeLabel(const char *text, const char *cssClass) {
 }
 
 GtkWidget *makeBadge(const char *text, const char *cssClass) {
-    GtkWidget *badge = gtk_label_new(text);
+    GtkWidget *badge = gtk_label_new(_(text));
     gtk_widget_add_css_class(badge, cssClass);
     gtk_widget_set_halign(badge, GTK_ALIGN_START);
     return badge;
@@ -548,6 +559,7 @@ GtkWidget *buildFanCard(AppContext &ctx) {
     return card;
 }
 
+
 // ── 设备信息 ────────────────────────────────────────────────────────────────
 
 struct FeatureSpec {
@@ -824,6 +836,236 @@ GtkWidget *buildOverviewPage(AppContext &ctx) {
     return wrapScrolled(content);
 }
 
+// ── 背景（默认纯黑 / 跟随亮暗 / 自定义颜色 / 图片 / 官方辉光）──────────────
+// 背景色与图片来自用户配置，用一份运行期 CSS 覆盖 style.css 的默认值；
+// 「跟随系统」时给窗口挂 .light 类，颜色覆盖写在 style.css 的 window.light.* 里。
+void applyBackground(AppContext &ctx) {
+    if (ctx.backgroundProvider != nullptr) {
+        gtk_style_context_remove_provider_for_display(
+            gdk_display_get_default(), GTK_STYLE_PROVIDER(ctx.backgroundProvider));
+        g_object_unref(ctx.backgroundProvider);
+        ctx.backgroundProvider = nullptr;
+    }
+    const std::string css = Config::backgroundCss(ctx.config);
+    if (!css.empty()) {
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_string(provider, css.c_str());
+        // 优先级比 style.css 高一档，才能覆盖它的默认背景
+        gtk_style_context_add_provider_for_display(
+            gdk_display_get_default(), GTK_STYLE_PROVIDER(provider),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+        ctx.backgroundProvider = provider;
+    }
+
+    // 「跟随系统」时必须把样式管理器的选择权交回系统，否则永远是暗色、跟不到亮色
+    AdwStyleManager *styleManager = adw_style_manager_get_default();
+    adw_style_manager_set_color_scheme(
+        styleManager, ctx.config.background.mode == Config::BackgroundMode::Theme
+                          ? ADW_COLOR_SCHEME_DEFAULT
+                          : ADW_COLOR_SCHEME_PREFER_DARK);
+
+    gtk_widget_remove_css_class(ctx.window, "light");
+    gtk_widget_remove_css_class(ctx.window, "image-bg");
+    if (ctx.config.background.mode == Config::BackgroundMode::Image) {
+        gtk_widget_add_css_class(ctx.window, "image-bg");
+    }
+    const bool systemLight =
+        ctx.forceLight ||
+        (ctx.config.background.mode == Config::BackgroundMode::Theme &&
+         adw_style_manager_get_dark(adw_style_manager_get_default()) == FALSE);
+    if (systemLight) {
+        gtk_widget_add_css_class(ctx.window, "light");
+    }
+}
+
+void refreshBackgroundRows(AppContext &ctx) {
+    if (ctx.bgColorRow != nullptr) {
+        gtk_widget_set_sensitive(
+            ctx.bgColorRow,
+            ctx.config.background.mode == Config::BackgroundMode::Color);
+    }
+    if (ctx.bgImageRow != nullptr) {
+        gtk_widget_set_sensitive(
+            ctx.bgImageRow,
+            ctx.config.background.mode == Config::BackgroundMode::Image);
+    }
+    if (ctx.bgImageLabel != nullptr) {
+        gtk_label_set_text(GTK_LABEL(ctx.bgImageLabel),
+                           ctx.config.background.image.empty()
+                               ? _("(none)")
+                               : ctx.config.background.image.c_str());
+    }
+}
+
+void commitBackground(AppContext &ctx) {
+    Config::save(ctx.config);
+    applyBackground(ctx);
+    refreshBackgroundRows(ctx);
+}
+
+struct BackgroundModeSpec {
+    Config::BackgroundMode mode;
+    const char *label; // (msgid)
+    const char *note;  // (msgid) 可为空
+};
+
+constexpr BackgroundModeSpec kBackgroundModes[] = {
+    {Config::BackgroundMode::Black, N_("Pure black"), N_("Default")},
+    {Config::BackgroundMode::Theme, N_("Follow system"), nullptr},
+    {Config::BackgroundMode::Glow, N_("Official glow"), nullptr},
+    {Config::BackgroundMode::Color, N_("Custom color"), nullptr},
+    {Config::BackgroundMode::Image, N_("Image"), nullptr},
+};
+
+void onBackgroundModeToggled(GtkToggleButton *btn, gpointer data) {
+    if (!gtk_toggle_button_get_active(btn)) {
+        return;
+    }
+    auto *ctx = static_cast<AppContext *>(data);
+    ctx->config.background.mode = static_cast<Config::BackgroundMode>(
+        GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "awcc-bg-mode")));
+    commitBackground(*ctx);
+}
+
+void onBackgroundColorChanged(GObject *object, GParamSpec *, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    const GdkRGBA *rgba =
+        gtk_color_dialog_button_get_rgba(GTK_COLOR_DIALOG_BUTTON(object));
+    if (rgba == nullptr) {
+        return;
+    }
+    gchar *hex = g_strdup_printf("#%02x%02x%02x",
+                                 static_cast<unsigned>(lround(rgba->red * 255.0)),
+                                 static_cast<unsigned>(lround(rgba->green * 255.0)),
+                                 static_cast<unsigned>(lround(rgba->blue * 255.0)));
+    ctx->config.background.color = hex;
+    g_free(hex);
+    if (ctx->config.background.mode == Config::BackgroundMode::Color) {
+        commitBackground(*ctx);
+    } else {
+        Config::save(ctx->config); // 先记下，等切到该模式再用
+    }
+}
+
+void onImageChosen(GObject *source, GAsyncResult *result, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    GError *error = nullptr;
+    GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source), result, &error);
+    if (file != nullptr) {
+        if (gchar *path = g_file_get_path(file); path != nullptr) {
+            ctx->config.background.image = path;
+            ctx->config.background.mode = Config::BackgroundMode::Image;
+            g_free(path);
+            commitBackground(*ctx);
+        }
+        g_object_unref(file);
+    } else if (error != nullptr) {
+        LOG_S(INFO) << "选择背景图片取消或失败：" << error->message;
+        g_error_free(error); // 用户取消属正常
+    }
+    g_object_unref(source); // 与 open 前那次 ref 配对
+}
+
+void onChooseImageClicked(GtkButton *, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, _("Choose background image"));
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, _("Images"));
+    gtk_file_filter_add_mime_type(filter, "image/*");
+    GListStore *filters = g_list_store_new(GTK_TYPE_FILE_FILTER);
+    g_list_store_append(filters, filter);
+    gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filters));
+    gtk_file_dialog_open(dialog, GTK_WINDOW(ctx->window), nullptr, onImageChosen, ctx);
+    g_object_unref(filters);
+    g_object_unref(filter);
+    // 异步期间要保持 dialog 活着，回调里 unref
+    g_object_ref(dialog);
+    g_object_unref(dialog);
+}
+
+void onResetBackgroundClicked(GtkButton *, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    ctx->config.background = Config::Background{};
+    Config::save(ctx->config);
+    applyBackground(*ctx);
+    refreshBackgroundRows(*ctx);
+}
+
+// 「设置 · 外观」页：背景模式 + 颜色 + 图片 + 恢复默认 + 配置文件位置
+GtkWidget *buildAppearancePage(AppContext &ctx) {
+    GtkWidget *content = makePageContent();
+
+    GtkWidget *card = makeCard(N_("Background"), N_("Saved to the user config file"));
+    GtkWidget *modes = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_set_halign(modes, GTK_ALIGN_START);
+    GtkToggleButton *leader = nullptr;
+    for (const BackgroundModeSpec &spec : kBackgroundModes) {
+        GtkWidget *btn = gtk_toggle_button_new_with_label(_(spec.label));
+        gtk_widget_add_css_class(btn, "mode-button");
+        if (spec.note != nullptr) {
+            gtk_widget_set_tooltip_text(btn, _(spec.note));
+        }
+        g_object_set_data(G_OBJECT(btn), "awcc-bg-mode", GINT_TO_POINTER(spec.mode));
+        if (leader == nullptr) {
+            leader = GTK_TOGGLE_BUTTON(btn);
+        } else {
+            gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(btn), leader);
+        }
+        g_signal_connect(btn, "toggled", G_CALLBACK(onBackgroundModeToggled), &ctx);
+        gtk_box_append(GTK_BOX(modes), btn);
+        if (spec.mode == ctx.config.background.mode) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn), TRUE);
+        }
+    }
+    gtk_box_append(GTK_BOX(card), modes);
+
+    // 自定义颜色
+    GtkWidget *colorRow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_box_append(GTK_BOX(colorRow), makeLabel(N_("Color"), "row-label"));
+    GtkWidget *colorBtn = gtk_color_dialog_button_new(gtk_color_dialog_new());
+    GdkRGBA rgba{};
+    if (!gdk_rgba_parse(&rgba, ctx.config.background.color.c_str())) {
+        rgba = GdkRGBA{0.0, 0.0, 0.0, 1.0};
+    }
+    gtk_color_dialog_button_set_rgba(GTK_COLOR_DIALOG_BUTTON(colorBtn), &rgba);
+    g_signal_connect(colorBtn, "notify::rgba", G_CALLBACK(onBackgroundColorChanged), &ctx);
+    gtk_box_append(GTK_BOX(colorRow), colorBtn);
+    gtk_box_append(GTK_BOX(card), colorRow);
+    ctx.bgColorRow = colorRow;
+
+    // 自定义图片
+    GtkWidget *imageRow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_box_append(GTK_BOX(imageRow), makeLabel(N_("Image"), "row-label"));
+    GtkWidget *choose = gtk_button_new_with_label(_("Choose image…"));
+    g_signal_connect(choose, "clicked", G_CALLBACK(onChooseImageClicked), &ctx);
+    gtk_box_append(GTK_BOX(imageRow), choose);
+    GtkWidget *imageLabel = gtk_label_new("");
+    gtk_widget_add_css_class(imageLabel, "card-note");
+    gtk_label_set_ellipsize(GTK_LABEL(imageLabel), PANGO_ELLIPSIZE_MIDDLE);
+    gtk_widget_set_hexpand(imageLabel, true);
+    gtk_widget_set_halign(imageLabel, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(imageRow), imageLabel);
+    gtk_box_append(GTK_BOX(card), imageRow);
+    ctx.bgImageRow = imageRow;
+    ctx.bgImageLabel = imageLabel;
+
+    GtkWidget *reset = gtk_button_new_with_label(_("Reset to default"));
+    gtk_widget_set_halign(reset, GTK_ALIGN_START);
+    g_signal_connect(reset, "clicked", G_CALLBACK(onResetBackgroundClicked), &ctx);
+    gtk_box_append(GTK_BOX(card), reset);
+
+    gtk_box_append(GTK_BOX(content), card);
+
+    GtkWidget *pathCard = makeCard(N_("Config file"), nullptr);
+    gtk_box_append(GTK_BOX(pathCard),
+                   makeLabel(Config::configPath().c_str(), "card-note"));
+    gtk_box_append(GTK_BOX(content), pathCard);
+
+    refreshBackgroundRows(ctx);
+    return wrapScrolled(content);
+}
+
 // 主页：模式 + 灯效 + 风扇（都是既有后端）；环形仪表还没接（M1 遥测层）
 GtkWidget *buildHome(AppContext &ctx) {
     GtkWidget *content = makePageContent();
@@ -912,7 +1154,8 @@ const SubPage kSettingsSubs[] = {
     {"about", N_("About"), N_("Settings · About"), N_("Version comes from the VERSION macro; doable"),
      buildAboutPage},
     {"appearance", N_("Appearance"), N_("Settings · Appearance"),
-     N_("Only the dark theme this round; light / follow-system is undecided"), nullptr},
+     N_("Background can be pure black, follow the system, a custom color or an image"),
+     buildAppearancePage},
     {"overlay", N_("Overlay"), N_("Settings · Overlay"),
      N_("There is no in-game overlay on Linux → marked as not applicable"), nullptr},
     {"onboarding", N_("Onboarding"), N_("Settings · Onboarding"),
@@ -995,6 +1238,17 @@ GtkWidget *makeSectionPage(const NavEntry &entry, AppContext &ctx) {
                                                 : makePlaceholderPage(sub.title, sub.note);
         gtk_stack_add_named(GTK_STACK(inner), child, sub.name);
         ctx.pageLog.push_back(std::string("  └─ ") + sub.name + "  " + _(sub.title));
+    }
+    if (!ctx.initialSubPage.empty()) {
+        // --ui-subpage：按名字选中子页（截图/自检用，只影响初始状态）
+        for (GtkWidget *child = gtk_widget_get_first_child(subnav); child != nullptr;
+             child = gtk_widget_get_next_sibling(child)) {
+            if (GTK_IS_TOGGLE_BUTTON(child) &&
+                ctx.initialSubPage == gtk_widget_get_name(child)) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(child), TRUE);
+                return page;
+            }
+        }
     }
     if (leader != nullptr) {
         gtk_toggle_button_set_active(leader, TRUE);
@@ -1087,10 +1341,9 @@ gboolean selftestFinish(gpointer data) { return finishFirstFrame(data); }
 void onActivate(GtkApplication *app, gpointer userData) {
     auto *ctx = static_cast<AppContext *>(userData);
 
-    // 深色打底（DESIGN.md 第六节）。必须在 GTK 初始化之后调用——放到 g_application_run()
-    // 之前会触发「gdk_display_manager_get() was called before gtk_init()」并崩掉。
-    adw_style_manager_set_color_scheme(adw_style_manager_get_default(),
-                                       ADW_COLOR_SCHEME_PREFER_DARK);
+    // 配色方案由 applyBackground() 按背景模式决定（「跟随系统」时要交出选择权）。
+    // 注意必须在 GTK 初始化之后做——放到 g_application_run() 之前会触发
+    // 「gdk_display_manager_get() was called before gtk_init()」并崩掉。
 
     GtkCssProvider *css = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(css, "/org/felix/awcc/style.css");
@@ -1119,6 +1372,18 @@ void onActivate(GtkApplication *app, gpointer userData) {
     }
 
     gtk_window_set_application(GTK_WINDOW(ctx->window), app);
+
+    // 背景：按用户配置注入覆盖 CSS；「跟随系统」时还要跟着系统亮暗切换
+    applyBackground(*ctx);
+    g_signal_connect(adw_style_manager_get_default(), "notify::dark",
+                     G_CALLBACK(+[](GObject *, GParamSpec *, gpointer data) {
+                         auto *context = static_cast<AppContext *>(data);
+                         if (context->config.background.mode ==
+                             Config::BackgroundMode::Theme) {
+                             applyBackground(*context);
+                         }
+                     }),
+                     ctx);
 
     // 导航图标的缩放组（左栏）；模式按钮那组在 buildModeCard 里加
     IconGroup &rail = addIconGroup(*ctx, 0.030, 16, 40);
@@ -1209,6 +1474,8 @@ int Ui::Run(int argc, char **argv, const Services &services) {
     bool selftest = false;
     std::string snapshotPath;      // --ui-snapshot=<路径>：把窗口渲染成 PNG（见下）
     std::string initialPage;       // --ui-page=<name>：启动时停在哪一页（截图/自检用）
+    bool forceLight = false;       // --ui-force-light：强制按亮色渲染（验证亮色配色用）
+    std::string initialSubPage;    // --ui-subpage=<name>：连子页一起指定（截图用）
     std::vector<char *> args;
     args.reserve(static_cast<size_t>(argc));
     for (int i = 0; i < argc; ++i) {
@@ -1218,6 +1485,14 @@ int Ui::Run(int argc, char **argv, const Services &services) {
         }
         if (i > 0 && arg == "--ui-selftest") {
             selftest = true;
+            continue;
+        }
+        if (i > 0 && arg.starts_with("--ui-subpage=")) {
+            initialSubPage = std::string(arg.substr(std::strlen("--ui-subpage=")));
+            continue;
+        }
+        if (i > 0 && arg == "--ui-force-light") {
+            forceLight = true;
             continue;
         }
         if (i > 0 && arg.starts_with("--ui-page=")) {
@@ -1235,10 +1510,13 @@ int Ui::Run(int argc, char **argv, const Services &services) {
     ctx.selftest = selftest;
     ctx.snapshotPath = snapshotPath;
     ctx.initialPage = initialPage;
+    ctx.forceLight = forceLight;
+    ctx.initialSubPage = initialSubPage;
     ctx.thermals = services.thermals;
     ctx.acpi = services.acpi;
     ctx.effects = services.effects;
     ctx.daemonRunning = services.daemonRunning;
+    ctx.config = Config::load();
     if (ctx.effects != nullptr) {
         ctx.brightness = std::clamp(ctx.effects->getBrightness(), 0, 100);
     }

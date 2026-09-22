@@ -326,7 +326,9 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "-g") == 0 || strcmp(argv[i], "--gui") == 0 ||
             strcmp(argv[i], "--ui-selftest") == 0 ||
             strncmp(argv[i], "--ui-snapshot=", 14) == 0 ||
-            strncmp(argv[i], "--ui-page=", 10) == 0) {
+            strncmp(argv[i], "--ui-page=", 10) == 0 ||
+            strcmp(argv[i], "--ui-force-light") == 0 ||
+            strncmp(argv[i], "--ui-subpage=", 13) == 0) {
             start_gui = true;
             break;
         }

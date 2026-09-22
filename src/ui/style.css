@@ -26,17 +26,77 @@
 @define-color awcc_icon #7e8185;
 @define-color awcc_track #3a3f47;
 
-/* ── 窗口与辉光 ─────────────────────────────────────────────────────────── */
+/* ── 窗口背景 ───────────────────────────────────────────────────────────── */
+/* 默认纯黑（需求）。官方截图那层蓝色辉光改成可选项，由 Config::backgroundCss() 在运行期
+   按用户配置注入；跟随系统亮暗则走下面的 window.light.* 覆盖。 */
 window.background {
-  background-color: @awcc_bg;
-  background-image: radial-gradient(
-    ellipse 95% 42% at 50% 5%,
-    @awcc_glow 0%,
-    #26286f 42%,
-    @awcc_bg 78%
-  );
+  background-color: #000000;
   color: @awcc_text;
   font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif;
+}
+
+/* 滚动容器自身不画底，免得盖住自定义背景图 */
+scrolledwindow,
+viewport {
+  background: none;
+}
+
+/* 自定义图片背景：卡片半透明，让图片透出来 */
+window.image-bg .card,
+window.image-bg .param-table {
+  background-color: alpha(@awcc_panel, 0.82);
+}
+
+/* ── 跟随系统亮色模式 ───────────────────────────────────────────────────── */
+window.light.background {
+  background-color: #f4f5f7;
+  color: #1b1f24;
+}
+
+window.light .card,
+window.light .param-table {
+  background-color: #ffffff;
+  border-color: #dfe3e8;
+}
+
+window.light .card-title,
+window.light .page-title,
+window.light .info-value,
+window.light .gauge-value,
+window.light .value-label {
+  color: #1b1f24;
+}
+
+window.light .card-note,
+window.light .row-label,
+window.light .gauge-sublabel,
+window.light .page-note,
+window.light .column-title,
+window.light .value-unit,
+window.light .info-row {
+  color: #5b6472;
+}
+
+window.light #nav_rail button {
+  color: #626b7a;
+}
+
+window.light .mode-button,
+window.light .effect-button,
+window.light .card button,
+window.light .subnav button {
+  background-color: #eceef2;
+  background-image: none;
+  border-color: #d8dce3;
+  color: #1b1f24;
+}
+
+window.light .info-sep {
+  background-color: #e6e9ee;
+}
+
+window.light .card scale trough {
+  background-color: #d8dce3;
 }
 
 /* 顶栏与内容都透明，让辉光透出来（官方标题栏就是压在辉光上的） */
