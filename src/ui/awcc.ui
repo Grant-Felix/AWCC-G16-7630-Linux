@@ -116,7 +116,7 @@
                 <child>
                   <object class="GtkToggleButton" id="nav_help">
                     <property name="name">help</property>
-                    <property name="icon-name">help-about-symbolic</property>
+                    <property name="icon-name">dialog-question-symbolic</property>
                     <property name="tooltip-text" translatable="yes">Help</property>
                     <property name="has-frame">false</property>
                   </object>

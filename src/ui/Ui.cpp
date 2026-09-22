@@ -31,7 +31,10 @@ namespace {
 //
 // 只有 GtkImage 的 pixel-size（正方形）会被改，不碰 width/height，因此长宽比固定不变。
 struct IconGroup {
-    std::vector<GtkImage *> images;
+    // 每个图标带一个倍率：Adwaita 各图标的墨迹占比不同（键盘是扁的、点阵是稀疏的），
+    // 只统一 pixel-size 出来的视觉大小并不一致，所以按量到的墨迹给每个图标补一个倍率。
+    std::vector<std::pair<GtkImage *, double>> images;
+    std::vector<int> inkHeights; // 图标墨迹高度（量一次用来算补偿倍率）
     std::vector<GtkWidget *> squares; // 跟着一起放大的按钮（给成正方形）
     double ratio;                     // 相对内容区短边的比例
     int minPx;
@@ -114,6 +117,58 @@ struct AppContext {
 gboolean selftestFinish(gpointer data);
 gboolean finishFirstFrame(gpointer data);
 
+// 把图标单独渲染出来，量它的「墨迹」高度/宽度。
+// 为什么要量：Adwaita 各图标在 16×16 画布里的留白差别很大（键盘是扁的、还有稀疏点阵的），
+// 只把 pixel-size 统一，视觉大小并不一致——量出来再逐个补偿才真的齐。
+constexpr int kMeasurePx = 32;
+
+int measureIconInk(const char *iconName, int *outWidth) {
+    GtkIconTheme *theme = gtk_icon_theme_get_for_display(gdk_display_get_default());
+    GtkIconPaintable *icon = gtk_icon_theme_lookup_icon(
+        theme, iconName, nullptr, kMeasurePx, 1, GTK_TEXT_DIR_NONE,
+        static_cast<GtkIconLookupFlags>(0));
+    if (icon == nullptr) {
+        return 0;
+    }
+    GtkSnapshot *snapshot = gtk_snapshot_new();
+    gdk_paintable_snapshot(GDK_PAINTABLE(icon), snapshot, kMeasurePx, kMeasurePx);
+    GskRenderNode *node = gtk_snapshot_free_to_node(snapshot);
+    cairo_surface_t *surface =
+        cairo_image_surface_create(CAIRO_FORMAT_ARGB32, kMeasurePx, kMeasurePx);
+    cairo_t *cr = cairo_create(surface);
+    if (node != nullptr) {
+        gsk_render_node_draw(node, cr);
+        gsk_render_node_unref(node);
+    }
+    cairo_surface_flush(surface);
+    const unsigned char *data = cairo_image_surface_get_data(surface);
+    const int stride = cairo_image_surface_get_stride(surface);
+    int minX = kMeasurePx;
+    int maxX = -1;
+    int minY = kMeasurePx;
+    int maxY = -1;
+    for (int y = 0; y < kMeasurePx; ++y) {
+        for (int x = 0; x < kMeasurePx; ++x) {
+            if (data[y * stride + x * 4 + 3] > 16) {
+                minX = std::min(minX, x);
+                maxX = std::max(maxX, x);
+                minY = std::min(minY, y);
+                maxY = std::max(maxY, y);
+            }
+        }
+    }
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    g_object_unref(icon);
+    if (maxY < 0) {
+        return 0;
+    }
+    if (outWidth != nullptr) {
+        *outWidth = maxX - minX + 1;
+    }
+    return maxY - minY + 1;
+}
+
 int iconPxFor(int base, const IconGroup &group) {
     return std::clamp(static_cast<int>(std::lround(base * group.ratio)), group.minPx,
                       group.maxPx);
@@ -147,8 +202,9 @@ void applyIconScale(AppContext &ctx, int width, int height) {
             continue;
         }
         group.lastPx = px;
-        for (GtkImage *image : group.images) {
-            gtk_image_set_pixel_size(image, px);
+        for (auto &[image, scale] : group.images) {
+            gtk_image_set_pixel_size(
+                image, std::max(1, static_cast<int>(std::lround(px * scale))));
         }
         const int side = px + static_cast<int>(std::lround(px * 0.9)) + 8;
         for (GtkWidget *square : group.squares) {
@@ -166,7 +222,7 @@ gboolean onContentTick(GtkWidget *widget, GdkFrameClock *clock, gpointer data) {
 }
 
 IconGroup &addIconGroup(AppContext &ctx, double ratio, int minPx, int maxPx) {
-    ctx.iconGroups.push_back(IconGroup{{}, {}, ratio, minPx, maxPx});
+    ctx.iconGroups.push_back(IconGroup{{}, {}, {}, ratio, minPx, maxPx});
     return ctx.iconGroups.back();
 }
 
@@ -1539,7 +1595,10 @@ void onActivate(GtkApplication *app, gpointer userData) {
         }
         GtkWidget *child = gtk_button_get_child(GTK_BUTTON(btn));
         if (child != nullptr && GTK_IS_IMAGE(child)) {
-            rail.images.push_back(GTK_IMAGE(child));
+            const char *iconName = gtk_image_get_icon_name(GTK_IMAGE(child));
+            rail.images.emplace_back(GTK_IMAGE(child), 1.0);
+            rail.inkHeights.push_back(
+                iconName != nullptr ? measureIconInk(iconName, nullptr) : 0);
         }
         if (navLeader == nullptr) {
             navLeader = btn;
@@ -1550,6 +1609,19 @@ void onActivate(GtkApplication *app, gpointer userData) {
             wantedPage = btn;
         }
         g_signal_connect(btn, "toggled", G_CALLBACK(onNavToggled), ctx);
+    }
+
+    // 左栏图标：把墨迹最小的补到与最大者同高，这样一排看起来才齐
+    if (!rail.inkHeights.empty()) {
+        const int target = *std::max_element(rail.inkHeights.begin(), rail.inkHeights.end());
+        if (target > 0) {
+            for (size_t i = 0; i < rail.inkHeights.size(); ++i) {
+                const int ink = rail.inkHeights[i];
+                rail.images[i].second =
+                    ink > 0 ? std::clamp(static_cast<double>(target) / ink, 0.8, 1.6) : 1.0;
+            }
+        }
+        rail.inkHeights.clear();
     }
 
     // 内容根节点（.ui 里的 content_root）挂帧时钟回调，把内容区尺寸喂给图标缩放逻辑。
