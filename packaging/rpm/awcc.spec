@@ -34,14 +34,15 @@ Only validated on the Dell G16 7630; other models are not supported.
 %autosetup -n AWCC-G16-7630-Linux-%{version}-%{release}
 
 %build
-# 显式给构建目录名，%install 里好引用；版本串与 tag 同串
-%cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DAWCC_VERSION=%{version}-%{release}
+# 不要自己写 -B build：%cmake_build 用的是 %{_vpath_builddir}（redhat-linux-build），
+# 两者不一致会报 "redhat-linux-build is not a directory"（实测踩到）。
+%cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DAWCC_VERSION=%{version}-%{release}
 %cmake_build
 
 %install
 # 只装我们自己那一个组件（COMPONENT awcc）：FetchContent 拉来的依赖自带 install 规则，
 # 不过滤会把 /usr/include/libusb-1.0 与 /usr/lib/libusb-1.0.a 也装进系统
-DESTDIR=%{buildroot} cmake --install build --component awcc
+DESTDIR=%{buildroot} cmake --install %{_vpath_builddir} --component awcc
 
 %files
 %{_bindir}/awcc
