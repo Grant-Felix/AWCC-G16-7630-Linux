@@ -29,6 +29,13 @@ jobs:
     container:
       image: debian:trixie
     steps:
+      # actions/checkout 是 Node 动作：容器里必须先有 node 和 git，否则这一步就 127 失败，
+      # 后面的构建步骤会被整段跳过（实测踩到）
+      - name: 先装 node 与 git（checkout 的前提）
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ca-certificates nodejs git
       - uses: actions/checkout@v4
       - name: 构建 deb 并挂到 Release
         env:
@@ -43,9 +50,8 @@ jobs:
           # build-essential 是 dpkg-buildpackage 隐含要求的构建依赖
           # nodejs 是给 actions/checkout 用的：它是 Node 动作，收尾步骤会在容器里跑 node，
           # 基础镜像里没有 node 就会报 "exec: node: executable file not found" 并判作业失败
-          apt-get install -y -qq --no-install-recommends ca-certificates build-essential \
-              debhelper cmake ninja-build meson git nodejs pkg-config libgtk-4-dev \
-              libadwaita-1-dev libudev-dev
+          apt-get install -y -qq --no-install-recommends build-essential debhelper cmake \
+              ninja-build meson pkg-config libgtk-4-dev libadwaita-1-dev libudev-dev
           rm -rf build .cache
           dpkg-buildpackage -b -us -uc
           ls -l /*.deb
@@ -57,6 +63,8 @@ jobs:
     container:
       image: fedora:latest
     steps:
+      - name: 先装 node 与 git（checkout 的前提）
+        run: dnf install -y -q ca-certificates nodejs git
       - uses: actions/checkout@v4
       - name: 构建 rpm 并挂到 Release
         env:
@@ -65,8 +73,8 @@ jobs:
         run: |
           set -e
           # nodejs 同上：actions/checkout 是 Node 动作
-          dnf install -y -q ca-certificates rpm-build cmake ninja-build gcc-c++ meson git \
-              nodejs curl pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel
+          dnf install -y -q rpm-build cmake ninja-build gcc-c++ meson \
+              curl pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel
           rm -rf build .cache
           mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           # spec 的 Source0 指向 tag 归档，rpmbuild 不会自己下载，先放到 SOURCES
@@ -83,6 +91,8 @@ jobs:
     container:
       image: archlinux:latest
     steps:
+      - name: 先装 node 与 git（checkout 的前提）
+        run: pacman -Sy --noconfirm --needed ca-certificates nodejs git
       - uses: actions/checkout@v4
       - name: 构建 Arch 包并挂到 Release
         env:
@@ -91,7 +101,7 @@ jobs:
         run: |
           set -e
           # nodejs 同上：actions/checkout 是 Node 动作
-          pacman -Sy --noconfirm --needed base-devel cmake ninja meson git nodejs sudo
+          pacman -Sy --noconfirm --needed base-devel cmake ninja meson sudo
           # makepkg 不允许以 root 运行；仓库里 PKGBUILD 的 pkgver 是 26.9.22_2 这种下划线写法
           useradd -m builder
           workdir=/tmp/aur-build
