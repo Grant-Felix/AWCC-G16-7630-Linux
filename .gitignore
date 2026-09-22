@@ -10,6 +10,9 @@ build/
 .cache/
 imgui.ini
 result
+# 本机调试时崩过（如 GTK 初始化顺序用错）会掉核心转储，别误提交
+core
+core.*
 
 # 戴尔官方 AWCC 的界面参考图（14 张截图，9.7MB）：只作 UI 重做的本地对照，不入库——
 # 其中 9 张超过 pre-commit 的 500KB 大文件门槛，且是戴尔的界面素材。
