@@ -1,8 +1,45 @@
 cmake_minimum_required(VERSION 3.16)
+
+# 本 fork 的版本号方案（见 ADAPTATION.md 第六节）：日期式 v<YY>.<M>.<D>-<当天第 x 次打包>，
+# 如 v26.9.22-1 是 2026-09-22 当天第 1 次打包。版本串的唯一出处是 git tag，这里取已有的
+# 日期式 tag 里版本最大的那个，于是每次发布都不必改本文件——改了就每次与上游 rebase 都冲突。
+# CI 在 tag 上 checkout，显式传 -DAWCC_VERSION=<串>，不查 tag。
+set(AWCC_VERSION
+    ""
+    CACHE STRING "完整版本串，如 26.9.22-1；留空则取版本最大的日期式 git tag")
+
+if(NOT AWCC_VERSION)
+  # 用 git tag 而不是 git describe：同一天多次打包会把多个 tag 打在同一个提交上（这正是
+  # 「第 x 次打包」的语义），实测 describe 在那种情况下会挑到前一天的 tag；按 version:refname
+  # 排序取最大才是「最新一次打包」。
+  execute_process(
+    COMMAND git tag -l --merged HEAD --sort=-v:refname
+            "v[0-9]*.[0-9]*.[0-9]*-*"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    OUTPUT_VARIABLE AWCC_DATE_TAGS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE AWCC_GIT_TAG_RESULT)
+  if(AWCC_GIT_TAG_RESULT EQUAL 0 AND AWCC_DATE_TAGS)
+    string(REPLACE "\n" ";" AWCC_DATE_TAGS "${AWCC_DATE_TAGS}")
+    list(GET AWCC_DATE_TAGS 0 AWCC_VERSION)
+    string(REGEX REPLACE "^v" "" AWCC_VERSION "${AWCC_VERSION}")
+  else()
+    # 没有日期式 tag（例如从 tarball 构建）时的占位，绝不能当成已发布版本
+    set(AWCC_VERSION "0.0.0-0")
+  endif()
+endif()
+
+# project(VERSION) 只收纯数字 major.minor.patch[.tweak]，装不下「-序号」，故只把数字部分喂它，
+# 完整串留给 VERSION 宏（awcc help / device-info 与 GUI 标题用）。
+string(REGEX REPLACE "-[0-9]+$" "" AWCC_VERSION_NUMERIC "${AWCC_VERSION}")
+
 project(
   awcc
   LANGUAGES CXX
-  VERSION 1.19.0)
+  VERSION ${AWCC_VERSION_NUMERIC})
+
+message(STATUS "awcc 版本串：${AWCC_VERSION}（CMake project VERSION ${PROJECT_VERSION}）")
 
 set(APP_NAME awcc)
 
@@ -17,7 +54,7 @@ set(CMAKE_BUILD_TYPE
     CACHE STRING "Build type" FORCE)
 # endif()
 
-add_compile_definitions(VERSION="${PROJECT_VERSION}")
+add_compile_definitions(VERSION="${AWCC_VERSION}")
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX
