@@ -39,21 +39,21 @@ Pick the one for your distribution — the commands download straight from the r
 **Debian / Ubuntu (`.deb`)**
 
 ```bash
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc_26.9.22-2_amd64.deb
-sudo apt install ./awcc_26.9.22-2_amd64.deb
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc_26.9.22-3_amd64.deb
+sudo apt install ./awcc_26.9.22-3_amd64.deb
 ```
 
 **Fedora / RHEL (`.rpm`)**
 
 ```bash
-sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22-2.x86_64.rpm
+sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-26.9.22-3.x86_64.rpm
 ```
 
 **Arch Linux (pacman, prebuilt)**
 
 ```bash
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22_2-1-x86_64.pkg.tar.zst
-sudo pacman -U awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
+sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
 ```
 
 **Arch Linux (AUR)**

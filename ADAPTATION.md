@@ -67,19 +67,19 @@ ninja -C build
 Arch，没有 debhelper/dpkg-dev 与 rpm-build，所以 `scripts/package.sh` 会在**对应发行版的官方
 镜像容器里**构建 deb 与 rpm（需要 docker），Arch 包直接本机打。
 
-包挂在 Release 上（`v26.9.22-2` 这批已挂），安装命令：
+包挂在 Release 上（`v26.9.22-3` 这批已挂（由 Forgejo Actions 构建）），安装命令：
 
 ```bash
 # Debian / Ubuntu
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc_26.9.22-2_amd64.deb
-sudo apt install ./awcc_26.9.22-2_amd64.deb
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc_26.9.22-3_amd64.deb
+sudo apt install ./awcc_26.9.22-3_amd64.deb
 
 # Fedora / RHEL
-sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22-2.x86_64.rpm
+sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-26.9.22-3.x86_64.rpm
 
 # Arch（预编译包）
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22_2-1-x86_64.pkg.tar.zst
-sudo pacman -U awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
+sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
 
 # Arch（AUR）
 paru -S awcc-g16-7630-linux
