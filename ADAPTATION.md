@@ -136,8 +136,9 @@ GUI：打开 Alienware Command Center → 选 `Static` 或其它灯效 → 点 C
 
 ## 九、后续计划
 
-- 重做前端 UI，使布局与官方 AWCC 更接近，还原使用体验（现有界面在 `src/gui/Gui.cpp` 与
-  `src/gui/Render.cpp`，用 ImGui 绘制）。
+- 重做前端 UI，**改用 GTK4**（2026-09-22 定），布局对齐戴尔官方 AWCC，还原使用体验。现有界面在
+  `src/gui/Gui.cpp` 与 `src/gui/Render.cpp`，用 ImGui 绘制；GTK4 落地后这套渲染代码与
+  `CMakeLists.txt` 里 imgui 钉版本那处改动（第二节）会一并退出。
 - 保持与上游同步；上游修好第三节两条后即丢弃本地补丁。
 
 ## 十、许可与义务
