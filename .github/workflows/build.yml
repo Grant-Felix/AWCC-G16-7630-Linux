@@ -1,18 +1,15 @@
 name: "Build and Upload"
 on:
     push:
-        tags: ["v*.*.*"]
+        tags: ["v[0-9]*.[0-9]*.[0-9]*-*"] # 日期式版本号，如 v26.9.22-1（见 ADAPTATION.md 第六节）
 
 jobs:
     build-and-upload:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-
-            - name: Set CMake project version to release
-              run: |
-                  VERSION="${GITHUB_REF_NAME#v}"
-                  sed -i 's/project(awcc LANGUAGES CXX VERSION .*)/project(awcc LANGUAGES CXX VERSION '"$VERSION"')/' CMakeLists.txt
+              with:
+                  fetch-depth: 0 # 拉全量 tag：CMake 的 tag 回退路径要用（本 workflow 显式传版本串，不靠它）
 
             - name: Install dependencies
               run: |
@@ -24,7 +21,8 @@ jobs:
               run: |
                   mkdir build
                   cd build
-                  cmake .. -G Ninja
+                  # 版本串取自 tag（GITHUB_REF_NAME 形如 v26.9.22-1），显式传给 CMake，不让它去查 tag
+                  cmake .. -G Ninja -DAWCC_VERSION="${GITHUB_REF_NAME#v}"
                   ninja
                   cd ..
 
@@ -38,6 +36,7 @@ jobs:
 
             - name: Create tarball with awcc binary, app folder, and LICENSE
               run: |
+                  # 产物文件名与 tag 同一串：AWCC-v26.9.22-1.tar.gz
                   tar -czvf AWCC-${{ github.ref_name }}.tar.gz -C release awcc app LICENSE database.json
 
             - name: Upload tarball as release asset
