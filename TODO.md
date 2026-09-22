@@ -175,6 +175,10 @@ ninja -C build pot
 # 5) 起窗口
 ./build/awcc --gui
 
+# 7) 样式自查（无显示器也能出图）：把窗口自渲染成 PNG，可对照 ADAPTATION.md 第九节的官方截图
+GSETTINGS_BACKEND=memory ./build/awcc --ui-page=performance --ui-snapshot=/tmp/ui.png
+#    可选页面：home / performance / alienfx / macro / library / settings / help
+
 # 6) 硬件回归
 ./build/awcc static 00ff00       # 键盘应变绿
 ```
