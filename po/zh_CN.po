@@ -412,7 +412,7 @@ msgstr "性能 · 概况"
 msgid ""
 "CPU / memory / disk are readable (M1 telemetry); GPU is unavailable while "
 "the dGPU is runtime-suspended"
-msgstr ""
+msgstr "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
 "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
 "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
 
