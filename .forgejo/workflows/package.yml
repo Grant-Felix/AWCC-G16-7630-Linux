@@ -41,8 +41,10 @@ jobs:
           # ca-certificates 必须显式装：官方镜像里没有它，git 拉 FetchContent 依赖会报
           #   "server certificate verification failed. CAfile: none"
           # build-essential 是 dpkg-buildpackage 隐含要求的构建依赖
+          # nodejs 是给 actions/checkout 用的：它是 Node 动作，收尾步骤会在容器里跑 node，
+          # 基础镜像里没有 node 就会报 "exec: node: executable file not found" 并判作业失败
           apt-get install -y -qq --no-install-recommends ca-certificates build-essential \
-              debhelper cmake ninja-build meson git pkg-config libgtk-4-dev \
+              debhelper cmake ninja-build meson git nodejs pkg-config libgtk-4-dev \
               libadwaita-1-dev libudev-dev
           rm -rf build .cache
           dpkg-buildpackage -b -us -uc
@@ -62,8 +64,9 @@ jobs:
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           set -e
+          # nodejs 同上：actions/checkout 是 Node 动作
           dnf install -y -q ca-certificates rpm-build cmake ninja-build gcc-c++ meson git \
-              curl pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel
+              nodejs curl pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel
           rm -rf build .cache
           mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           # spec 的 Source0 指向 tag 归档，rpmbuild 不会自己下载，先放到 SOURCES
@@ -87,7 +90,8 @@ jobs:
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           set -e
-          pacman -Sy --noconfirm --needed base-devel cmake ninja meson git sudo
+          # nodejs 同上：actions/checkout 是 Node 动作
+          pacman -Sy --noconfirm --needed base-devel cmake ninja meson git nodejs sudo
           # makepkg 不允许以 root 运行；仓库里 PKGBUILD 的 pkgver 是 26.9.22_2 这种下划线写法
           useradd -m builder
           workdir=/tmp/aur-build
