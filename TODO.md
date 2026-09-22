@@ -74,7 +74,8 @@ class Telemetry {
 M0.1–M0.4 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui` 起出窗口并经 `GtkApplication`
 注册到会话总线，imgui / glfw / OpenGL / X11 / stb 与上游 ImGui 界面一并退役，模式图标抽成
 `assets/modes/*.png`；外壳（窗口 + 左栏 + 面包屑 + `GtkStack`）走 `GtkBuilder` `.ui` + `GResource`，
-各页面先由代码生成「施工中」占位。余下 M0.5（深色 CSS）。
+各页面先由代码生成「施工中」占位。另有两条需求也已落地并验证：**中英文自动切换**（gettext）
+与**图标随窗口等比缩放**。余下 M0.5 的样式细化。
 
 | 步骤 | 产物 | 验证命令 | 完成判据 |
 | --- | --- | --- | --- |
@@ -82,7 +83,8 @@ M0.1–M0.4 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui`
 | M0.2 最小窗口 | `GtkApplication` + `GtkApplicationWindow`，标题 `Alienware Command Center v<版本>`（取 `VERSION` 宏） | `./build/awcc --gui` | Wayland 下出现窗口，标题带版本串 |
 | M0.3 旧 UI 退役 | 删 `src/gui/`、`src/resources.cpp`、`include/Renderui.h`、`include/Gui.h`；CMake 去掉 imgui / glfw / OpenGL / X11 依赖 | `grep -rn "imgui\|glfw" src include CMakeLists.txt` | 无输出；构建仍通过（`ADAPTATION.md` 第二节的 imgui 钉版本补丁同步标注退役） |
 | M0.4 导航与占位页 | 外壳写成 `src/ui/awcc.ui`（`AdwApplicationWindow` + 左栏图标 + 面包屑 + `GtkStack`）+ `GResource` 打进二进制；页面先由 `Ui.cpp` 生成占位（7 个一级页 + 10 个子页，每个带「施工中」徽标与缺什么后端的一句话） | `./build/awcc --ui-selftest` | 页面树打印出 17 个节点、退出码 0；`--gui` 能切页且面包屑同步 |
-| M0.5 样式 | `src/ui/style.css`，深色底、强调色、`font-family: "Noto Sans CJK SC"` | 起窗口看中文标签不是豆腐块、字形不是韩文变体 | CSS 生效；中文正常 |
+| M0.5 语言与自适应 | 源串改英文 + `po/zh_CN.po` + `msgfmt` 编译与安装；图标改由帧时钟回调按内容区短边缩放（16–40px，只设正方形 `pixel-size`） | `LANG=zh_CN.UTF-8 ./build/awcc --ui-selftest \| sed -n 2p` 与 `LANG=C.UTF-8 …`；`./build/awcc --ui-selftest \| grep -E "observed\|scale samples"` | 中文环境中文、其他环境英文；观测到真实分配尺寸与对应图标边长，边界样本夹取正确 |
+| M0.6 参考图配色细化 | `style.css` 按 14 张参考图调：红色强调色、窄图标栏、选中态、环形表配色 | 起窗口对照参考图 | 观感接近参考图（主观项，由 Felix 判定） |
 
 ### M1 遥测层
 
@@ -142,9 +144,17 @@ cd "/home/felix/项目/AWCC G16 7630 Linux"
 pkg-config --exists gtk4 libadwaita-1 && echo "GTK4 依赖 ok"
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && ninja -C build
 
-# 2) 界面自检：把页面树建出来并打印，对象缺失或页面不全就以非零码退出
+# 2) 界面自检：页面树 + 真实尺寸观测 + 缩放样本，对象缺失或页面不全就以非零码退出
 #    （不用 gtk4-builder-tool validate——它认不出 libadwaita 的 Adw* 类型，对含 Adw 的 .ui 必失败）
 ./build/awcc --ui-selftest
+
+# 2b) 语言自动切换（源串英文，中文走 po/zh_CN.po；LANG=C 时 gettext 回落成英文）
+LANG=zh_CN.UTF-8 ./build/awcc --ui-selftest | sed -n 2p     # 期望「├─ home  主页 · 当前生效」
+LANG=C.UTF-8     ./build/awcc --ui-selftest | sed -n 2p     # 期望「├─ home  Home · Active」
+
+# 2c) 翻译文件本身（msgfmt --check-format；改了串先用 ninja pot 刷新模板）
+ninja -C build translations
+ninja -C build pot
 
 # 3) 版本号仍从 tag 取（回归：不该被 UI 改动破坏）
 ./build/awcc -h | head -1        # 期望 Alienware Command Center v26.9.22-1

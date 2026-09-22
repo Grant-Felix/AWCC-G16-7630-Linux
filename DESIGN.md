@@ -26,10 +26,20 @@
 | 构建 | **保持 CMake** + `pkg-config` 找 gtk4/libadwaita | 项目本来就是 CMake + FetchContent；GTK 通过 pkg-config 支持任意构建系统 | 引 Meson：会把构建系统劈成两半 |
 | 配置持久化 | **`$XDG_CONFIG_HOME/awcc/config.ini`**（GKeyFile） | 配置要**同时被普通用户身份的 GUI 与 root 身份的 daemon** 读；GSettings 后端 dconf 是 per-user 的，root 读用户的 dconf 很别扭 | 用 GSettings（官方做法）：需装 schema 到 `/usr/share/glib-2.0/schemas`，且 root 侧读取要多绕一层 |
 | 字体 | 系统字体，CSS 指定 `Noto Sans CJK SC` | 本机**没装 Roboto**；中文标签必须走 Noto Sans CJK，且默认 `fc-match sans-serif:lang=zh` 会落到 **KR**（韩文变体），必须显式写 **SC** | 继续内嵌 Roboto：它没有 CJK 字形，中文标签会变豆腐块 |
+| 国际化 | gettext（GLib 的 `gi18n.h`）：**源串写英文**，译文放 `po/zh_CN.po`，按 `LANG` / `LC_MESSAGES` 自动切 | GTK/GLib 的官方做法；源串是英文，非中文环境会回落到英文，仍可读 | 源串写中文 + `po/en.po`：`LANG=C` 时 gettext 根本不会去找 `en`，英文用户会看到中文 |
+| 界面串的标记方式 | 代码里的串用 `_()`；表格等静态串用 `N_()`；`.ui` 里用 `translatable="yes"` | `N_()` 是给 `xgettext` 看的标记——表格里的串不是字面量，不加它提取不到，翻译模板会缺条目 | —— |
+| 图标随窗口缩放 | 帧时钟回调读内容区尺寸，按短边算 16–40px，只设 `GtkImage` 的 `pixel-size` | 只给正方形边长 ⇒ **长宽比固定**；尺寸没变立即返回，开销是几次整数比较 | `GtkWidgetClass.size_allocate` vfunc：文档写明只对**没有 layout manager** 的控件调用，而 `GtkBox` 自带 `GtkBoxLayout`——实测加探针一次都没进（见下） |
 
 `src/resources.cpp`（15 万行）里是 9 个数组：5 个模式 PNG 图标 + 4 套 Roboto 字体，全部只服务
 ImGui。换 GTK4 后**4 套字体退役**（改用系统字体），5 个模式图标可留作 GResource，或改换成
 矢量图标。
+
+**一条踩过的 GTK4 行为**（写下来免得再踩）：想拿「窗口尺寸变化」时，直觉是覆盖
+`GtkWidgetClass.size_allocate` vfunc，但它的文档写着 *called to set the allocation, **if the
+widget does not have a layout manager***。`GtkBox` 自带 `GtkBoxLayout`，所以这个 vfunc 实测
+**一次都不会被调用**（加 `g_print` 探针确认）。为一个缩放钩子去写自定义容器 + `GtkBuildable`
+不划算，最终用帧时钟回调：每帧读一次内容区尺寸，没变就直接返回。同理，`GtkWindow:default-width`
+只是「默认尺寸」，窗口 map 之后再 `gtk_window_set_default_size()` 也改不动实际尺寸。
 
 ## 三、分层与权限边界
 
