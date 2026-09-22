@@ -81,9 +81,9 @@ sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/dow
 curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
 sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
 
-# Arch（AUR）
-paru -S awcc-g16-7630-linux
-yay  -S awcc-g16-7630-linux
+# Arch（AUR）：尚未发布——AUR 现在暂停新账户注册（HTTP 503，官方防自动化注册滥发），
+# 恢复前用上面那条 pacman -U，或拿仓库里的配方本地构建：
+cp -r packaging/aur /tmp/awcc-aur && cd /tmp/awcc-aur && makepkg -si
 ```
 
 国内把 URL 里的 `github.com/Grant-Felix` 换成 `gitee.com/Grant-Felix` 即可，产物同一份。

@@ -2,6 +2,10 @@
 
 ## v26.9.22-3 (2026-09-22)
 
+> AUR 状态：**尚未发布**。AUR 现在暂停新账户注册（HTTP 503，官方为应对自动化注册滥发而临时
+> 关闭），所以 Arch 用户请用 Release 上的预编译包 `sudo pacman -U`，或拿仓库里的
+> `packaging/aur/` 本地 `makepkg -si`；注册恢复后再推 AUR（步骤见该目录的 README）。
+
 同日第 3 次打包。相对 `v26.9.22-2` 的差别**只在打包**：v26.9.22-2 的源码归档里 install 规则
 还没有 `COMPONENT awcc` 标记，导致 Arch / RPM 包用 `--component awcc` 安装时一个文件都装不进去
 （deb 不受影响，因为它直接用工作区源码）。这个 tag 起，三个发行版的包都能正确构建。

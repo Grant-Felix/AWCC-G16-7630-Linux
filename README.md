@@ -56,20 +56,25 @@ curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v2
 sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
 ```
 
-**Arch Linux (AUR)**
+**Arch Linux (AUR)** — *not published yet*: AUR registration is temporarily
+closed (HTTP 503, an upstream anti-spam measure). Until it reopens, build from
+this repo's recipe instead:
 
 ```bash
-paru -S awcc-g16-7630-linux
-# or
-yay  -S awcc-g16-7630-linux
+git clone https://github.com/Grant-Felix/AWCC-G16-7630-Linux.git
+cp -r AWCC-G16-7630-Linux/packaging/aur /tmp/awcc-aur && cd /tmp/awcc-aur
+makepkg -si
 ```
+
+Once published, `paru -S awcc-g16-7630-linux` and `yay -S awcc-g16-7630-linux`
+will work as usual.
 
 Mirror (mainland China): the same files are on
 [Gitee](https://gitee.com/Grant-Felix/AWCC-G16-7630-Linux/releases) — replace
 `github.com/Grant-Felix` with `gitee.com/Grant-Felix` in the URLs above.
 
-> Arch note: the AUR `pkgver` cannot contain a hyphen, so the release `26.9.22-2`
-> appears as `26.9.22_2` there. RPM splits it into `Version: 26.9.22` / `Release: 2`.
+> Arch note: the AUR `pkgver` cannot contain a hyphen, so the release `26.9.22-3`
+> appears as `26.9.22_3` there. RPM splits it into `Version: 26.9.22` / `Release: 2`.
 
 Runtime requirements: a Dell G16 7630, the `acpi_call` kernel module (for thermal
 modes / fan control) and the udev rules shipped by the package. The daemon runs as

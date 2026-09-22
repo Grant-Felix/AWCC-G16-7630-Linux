@@ -4,6 +4,28 @@
 AUR 只收配方、不收二进制，预编译包挂在 Release 上（Forgejo / GitHub / Gitee）。
 `scripts/package.sh` 与 Forgejo Actions 也会用它打 Arch 预编译包。
 
+## 当前状态：还没发布到 AUR
+
+AUR 现在**暂停新账户注册**（HTTP 503，官方为应对一波自动化账户创建滥发而临时关闭；没有手动
+排队，公告只发在 `aur-general` 邮件列表与 Arch 新闻通知上）。本机也还没有 AUR 账号的痕迹，
+所以这个包**尚未出现在 AUR**。官方明确提醒**不要针对那个页面写重试脚本**——请以邮件列表与
+新闻为准，别去轮询。
+
+发布之前，Arch 用户仍有两条路可走：
+
+```bash
+# 1) 用 Release 上的预编译包（三个平台都有，国内走 Gitee）
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
+sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
+
+# 2) 用本仓库里的配方本地构建（想自己编译的话）
+cp -r packaging/aur /tmp/awcc-aur && cd /tmp/awcc-aur
+makepkg -si
+# 注意：构建目录不要带空格——makepkg 的调试参数会被路径里的空格拆断（实测踩到）
+```
+
+注册恢复后，按文末「推送到 AUR」那三步推上去即可（`PKGBUILD`、`.SRCINFO`、`LICENSE` 都已备好）。
+
 ## 与上游那两个包的关系
 
 AUR 上已有的 `awcc-bin` 与 `awcc-git` 是**上游作者 tr1x_em 本人**维护的（源码是上游
