@@ -321,9 +321,12 @@ int main(int argc, char *argv[]) {
 
     bool start_gui = false;
     for (int i = 1; i < argc; ++i) {
-        // --ui-selftest 是前端的无人值守自检（见 TODO.md 的验证方式），它也要先把界面建起来
+        // --ui-selftest / --ui-snapshot=... 是前端的无人值守模式（见 TODO.md 的验证方式），
+        // 它们也要先把界面建起来
         if (strcmp(argv[i], "-g") == 0 || strcmp(argv[i], "--gui") == 0 ||
-            strcmp(argv[i], "--ui-selftest") == 0) {
+            strcmp(argv[i], "--ui-selftest") == 0 ||
+            strncmp(argv[i], "--ui-snapshot=", 14) == 0 ||
+            strncmp(argv[i], "--ui-page=", 10) == 0) {
             start_gui = true;
             break;
         }

@@ -13,17 +13,18 @@
   <requires lib="Adw" version="1.0" />
 
   <object class="AdwApplicationWindow" id="main_window">
-    <property name="default-width">1000</property>
-    <property name="default-height">680</property>
+    <property name="default-width">1280</property>
+    <property name="default-height">800</property>
     <child>
       <object class="AdwToolbarView">
         <child type="top">
-          <object class="AdwHeaderBar">
+          <object class="AdwHeaderBar" id="header_bar">
             <property name="title-widget">
-              <object class="GtkBox">
+              <object class="GtkBox" id="crumb_box">
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkLabel" id="crumb_main">
+                    <property name="name">crumb_main</property>
                     <property name="label" translatable="yes">Home</property>
                     <attributes>
                       <attribute name="weight" value="bold" />
@@ -33,11 +34,13 @@
                 <child>
                   <object class="GtkLabel">
                     <property name="label">|</property>
+                    <property name="name">crumb_sep</property>
                     <property name="opacity">0.4</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkLabel" id="crumb_sub">
+                    <property name="name">crumb_sub</property>
                     <property name="label" translatable="yes">System</property>
                   </object>
                 </child>
@@ -50,6 +53,7 @@
             <property name="orientation">horizontal</property>
             <child>
               <object class="GtkBox" id="nav_rail">
+                <property name="name">nav_rail</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">2</property>
                 <property name="width-request">56</property>

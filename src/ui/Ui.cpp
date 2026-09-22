@@ -93,12 +93,15 @@ struct AppContext {
     // 自检
     GApplication *app = nullptr;
     bool selftest = false;
-    bool selftestReported = false; // 自检已经报告过一次（等真实分配，不用固定延时）
+    std::string snapshotPath;      // --ui-snapshot=<路径>：把窗口渲染成 PNG（见下）
+    std::string initialPage;       // --ui-page=<name>：启动时停在哪一页（截图/自检用）
+    bool selftestReported = false; // 首帧已经处理过一次（等真实分配，不用固定延时）
     bool error = false;
     std::vector<std::string> pageLog;
 };
 
 gboolean selftestFinish(gpointer data);
+gboolean finishFirstFrame(gpointer data);
 
 int iconPxFor(int base, const IconGroup &group) {
     return std::clamp(static_cast<int>(std::lround(base * group.ratio)), group.minPx,
@@ -112,10 +115,10 @@ void applyIconScale(AppContext &ctx, int width, int height) {
     if (base <= 0) {
         return; // 还没 map，别按 0 算出一堆最小值去改控件
     }
-    // 自检：等到第一次真实分配再报告，比固定 sleep 可靠（窗口 map 时间不定）
-    if (ctx.selftest && !ctx.selftestReported) {
+    // 等到第一次真实分配再处理（自检报告 / 渲染快照），比固定 sleep 可靠（窗口 map 时间不定）
+    if ((ctx.selftest || !ctx.snapshotPath.empty()) && !ctx.selftestReported) {
         ctx.selftestReported = true;
-        g_timeout_add(200, selftestFinish, &ctx);
+        g_timeout_add(200, finishFirstFrame, &ctx);
     }
     for (IconGroup &group : ctx.iconGroups) {
         const int px = iconPxFor(base, group);
@@ -257,21 +260,17 @@ void onGpuBoostChanged(GtkRange *range, gpointer data) {
 struct ModeSpec {
     ThermalModes mode;
     ThermalModeSet set;
-    const char *label;    // (msgid)
-    const char *iconName; // resources/modes 下的 PNG
+    const char *label; // (msgid)
 };
 
 constexpr ModeSpec kModes[] = {
-    {ThermalModes::BatterySaver, ThermalModeSet::BatterySaver, N_("Battery saver"),
-     "batteryMode.png"},
-    {ThermalModes::Cool, ThermalModeSet::Cool, N_("Cool"), "quiteMode.png"},
-    {ThermalModes::Quiet, ThermalModeSet::Quiet, N_("Quiet"), "quiteMode.png"},
-    {ThermalModes::Balanced, ThermalModeSet::Balanced, N_("Balanced"), "balancedMode.png"},
-    {ThermalModes::Performance, ThermalModeSet::Performance, N_("Performance"),
-     "performanceMode.png"},
-    {ThermalModes::Gmode, ThermalModeSet::GMode, N_("G mode"), "gMode.png"},
+    {ThermalModes::BatterySaver, ThermalModeSet::BatterySaver, N_("Battery saver")},
+    {ThermalModes::Cool, ThermalModeSet::Cool, N_("Cool")},
+    {ThermalModes::Quiet, ThermalModeSet::Quiet, N_("Quiet")},
+    {ThermalModes::Balanced, ThermalModeSet::Balanced, N_("Balanced")},
+    {ThermalModes::Performance, ThermalModeSet::Performance, N_("Performance")},
+    {ThermalModes::Gmode, ThermalModeSet::GMode, N_("G mode")},
 };
-
 void onModeToggled(GtkToggleButton *btn, gpointer data) {
     if (!gtk_toggle_button_get_active(btn)) {
         return;
@@ -285,12 +284,13 @@ void onModeToggled(GtkToggleButton *btn, gpointer data) {
     }
 }
 
-GtkWidget *buildModeCard(AppContext &ctx) {
-    GtkWidget *card = makeCard(N_("Power mode"), N_("Applies immediately"));
-    GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-    gtk_widget_set_halign(row, GTK_ALIGN_START);
+// 官方样式里这排电源模式按钮是「无卡片、整行居中」浮在顶部辉光上的
+GtkWidget *buildModeRow(AppContext &ctx) {
+    GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+    gtk_widget_set_halign(row, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(row, 6);
+    gtk_widget_set_margin_bottom(row, 6);
 
-    IconGroup &group = addIconGroup(ctx, 0.055, 28, 64);
     GtkToggleButton *leader = nullptr;
     const ThermalModes current =
         ctx.thermals != nullptr ? ctx.thermals->getCurrentMode() : ThermalModes::Balanced;
@@ -299,19 +299,10 @@ GtkWidget *buildModeCard(AppContext &ctx) {
         if (ctx.acpi != nullptr && !ctx.acpi->hasThermalMode(spec.set)) {
             continue; // 本机型不支持的模式就不摆出来
         }
-        GtkWidget *btn = gtk_toggle_button_new();
+        // 官方样式里模式按钮是纯文字小黑块（没有图标），选中变红
+        GtkWidget *btn = gtk_toggle_button_new_with_label(_(spec.label));
         gtk_widget_add_css_class(btn, "mode-button");
         g_object_set_data(G_OBJECT(btn), "awcc-mode", GINT_TO_POINTER(spec.mode));
-
-        GtkWidget *content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-        const std::string path = std::string("/org/felix/awcc/modes/") + spec.iconName;
-        GtkWidget *icon = gtk_image_new_from_resource(path.c_str());
-        gtk_widget_set_halign(icon, GTK_ALIGN_CENTER);
-        group.images.push_back(GTK_IMAGE(icon));
-        gtk_box_append(GTK_BOX(content), icon);
-        GtkWidget *label = gtk_label_new(_(spec.label));
-        gtk_box_append(GTK_BOX(content), label);
-        gtk_button_set_child(GTK_BUTTON(btn), content);
 
         if (leader == nullptr) {
             leader = GTK_TOGGLE_BUTTON(btn);
@@ -324,8 +315,7 @@ GtkWidget *buildModeCard(AppContext &ctx) {
             gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn), TRUE);
         }
     }
-    gtk_box_append(GTK_BOX(card), row);
-    return card;
+    return row;
 }
 
 // ── 灯效 ────────────────────────────────────────────────────────────────────
@@ -472,6 +462,7 @@ GtkWidget *buildLightingCard(AppContext &ctx, bool withDuration) {
     return card;
 }
 
+
 // ── 风扇与睿频 ──────────────────────────────────────────────────────────────
 
 gboolean onTurboStateSet(GtkSwitch *sw, gboolean state, gpointer data) {
@@ -576,26 +567,41 @@ constexpr FeatureSpec kFeatures[] = {
 
 void addInfoRow(GtkWidget *card, const char *label, const std::string &value) {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_add_css_class(row, "info-row");
     GtkWidget *key = makeLabel(_(label), "row-label");
     gtk_widget_set_size_request(key, 140, -1);
     gtk_box_append(GTK_BOX(row), key);
     GtkWidget *val = gtk_label_new(value.c_str());
     gtk_label_set_selectable(GTK_LABEL(val), TRUE);
-    gtk_widget_set_halign(val, GTK_ALIGN_START);
+    gtk_widget_add_css_class(val, "info-value");
+    // 官方表格是「左标签、右数值」，数值贴着列右边
+    gtk_widget_set_hexpand(val, true);
+    gtk_widget_set_halign(val, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(row), val);
     gtk_box_append(GTK_BOX(card), row);
+}
+
+void addInfoSeparator(GtkWidget *card) {
+    GtkWidget *sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_widget_add_css_class(sep, "info-sep");
+    gtk_box_append(GTK_BOX(card), sep);
 }
 
 GtkWidget *buildAboutCard(AppContext &ctx) {
     GtkWidget *card = makeCard(N_("Device"), nullptr);
     addInfoRow(card, N_("Model"), Helper::getDeviceName());
+    addInfoSeparator(card);
     addInfoRow(card, N_("Version"), VERSION);
+    addInfoSeparator(card);
     addInfoRow(card, N_("Keyboard zones"),
                std::to_string(ctx.acpi != nullptr ? ctx.acpi->getKeyboardZones().size() : 0));
+    addInfoSeparator(card);
     addInfoRow(card, N_("Current mode"),
                ctx.thermals != nullptr ? ctx.thermals->getCurrentModeName() : "-");
+    addInfoSeparator(card);
     addInfoRow(card, N_("Daemon"),
                ctx.daemonRunning ? _("running (socket)") : _("not running (pkexec fallback)"));
+    addInfoSeparator(card);
 
     std::string features;
     if (ctx.acpi != nullptr) {
@@ -660,6 +666,164 @@ GtkWidget *makePlaceholderPage(const char *title, const char *note) {
     return box;
 }
 
+// ── 环形仪表（官方版式）──────────────────────────────────────────────────
+// 灰轨道 + 从 12 点顺时针的红色弧 + 中间大号白字 + 单位，仪表下方是红色名称与灰色说明。
+// 数据还没接（M1 遥测层）时 value < 0：只画灰轨道、中间显示「—」，绝不画成 0 骗人。
+constexpr double kGaugeStroke = 6.0;
+
+struct GaugeData {
+    double fraction = 0.0; // 0..1，未知时忽略
+    bool unknown = true;
+};
+
+void drawGauge(GtkDrawingArea *area, cairo_t *cr, int width, int height,
+               gpointer data) {
+    auto *gauge = static_cast<GaugeData *>(data);
+    const double cx = width / 2.0;
+    const double cy = height / 2.0;
+    const double radius = std::min(cx, cy) - kGaugeStroke;
+    const double start = -M_PI / 2.0; // 12 点方向起，顺时针
+    const double full = 2.0 * M_PI - 0.35; // 留一点缺口，和官方一样
+
+    cairo_set_line_width(cr, kGaugeStroke);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+
+    cairo_set_source_rgb(cr, 0x3a / 255.0, 0x3f / 255.0, 0x47 / 255.0);
+    cairo_arc(cr, cx, cy, radius, start, start + full);
+    cairo_stroke(cr);
+
+    if (!gauge->unknown && gauge->fraction > 0.0) {
+        cairo_set_source_rgb(cr, 0xfd / 255.0, 0x56 / 255.0, 0x43 / 255.0);
+        cairo_arc(cr, cx, cy, radius, start, start + full * gauge->fraction);
+        cairo_stroke(cr);
+    }
+}
+
+GtkWidget *makeGauge(double fraction, bool unknown, const char *valueText,
+                     const char *unit, const char *label, const char *sublabel) {
+    auto *gauge = new GaugeData{fraction, unknown};
+
+    GtkWidget *area = gtk_drawing_area_new();
+    gtk_widget_set_size_request(area, 150, 150);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), drawGauge, gauge,
+                                   [](gpointer data) { delete static_cast<GaugeData *>(data); });
+
+    GtkWidget *valueBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_halign(valueBox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(valueBox, GTK_ALIGN_CENTER);
+    GtkWidget *value = gtk_label_new(valueText);
+    gtk_widget_add_css_class(value, "gauge-value");
+    gtk_box_append(GTK_BOX(valueBox), value);
+    GtkWidget *unitLabel = gtk_label_new(unit);
+    gtk_widget_add_css_class(unitLabel, "gauge-unit");
+    gtk_box_append(GTK_BOX(valueBox), unitLabel);
+
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), area);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), valueBox);
+
+    GtkWidget *column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_set_halign(column, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(column), overlay);
+    GtkWidget *name = gtk_label_new(_(label));
+    gtk_widget_add_css_class(name, "gauge-label");
+    gtk_box_append(GTK_BOX(column), name);
+    if (sublabel != nullptr) {
+        GtkWidget *sub = gtk_label_new(_(sublabel));
+        gtk_widget_add_css_class(sub, "gauge-sublabel");
+        gtk_box_append(GTK_BOX(column), sub);
+    }
+    return column;
+}
+
+// 官方 性能·概况 页：四列，每列「标题行(小图标+灰字) + 环形表 + 参数表」。
+// 参数表暂时用「—」占位（M1 遥测层接上后换成真值，见 TODO.md）。
+GtkWidget *makeParamTable(const char *const *rows, size_t rowCount) {
+    GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_add_css_class(card, "param-table");
+    for (size_t i = 0; i < rowCount; ++i) {
+        GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_widget_add_css_class(row, "info-row");
+        GtkWidget *key = makeLabel(_(rows[i]), "row-label");
+        gtk_widget_set_hexpand(key, true);
+        gtk_box_append(GTK_BOX(row), key);
+        GtkWidget *val = gtk_label_new("—");
+        gtk_widget_add_css_class(val, "info-value");
+        gtk_box_append(GTK_BOX(row), val);
+        gtk_box_append(GTK_BOX(card), row);
+        if (i + 1 < rowCount) {
+            GtkWidget *sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+            gtk_widget_add_css_class(sep, "info-sep");
+            gtk_box_append(GTK_BOX(card), sep);
+        }
+    }
+    return card;
+}
+
+// 官方里每列顶上那行：一个小图标 + 灰色标题（CPU 概况 / GPU 概况 …）
+GtkWidget *makeColumnHeader(const char *iconName, const char *title) {
+    GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_halign(header, GTK_ALIGN_CENTER);
+    GtkWidget *icon = gtk_image_new_from_icon_name(iconName);
+    gtk_widget_add_css_class(icon, "column-icon");
+    gtk_box_append(GTK_BOX(header), icon);
+    GtkWidget *label = makeLabel(_(title), "column-title");
+    gtk_box_append(GTK_BOX(header), label);
+    return header;
+}
+
+GtkWidget *buildOverviewPage(AppContext &ctx) {
+    GtkWidget *content = makePageContent();
+    gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
+
+    const char *cpuRows[] = {N_("Frequency (GHz)"), N_("Temperature"), N_("Power (W)"),
+                             N_("Voltage (V)")};
+    const char *gpuRows[] = {N_("Frequency (MHz)"), N_("Temperature"), N_("VRAM (MHz)")};
+    const char *memRows[] = {N_("Available (GB)"), N_("Frequency (MHz)"),
+                             N_("Unpaged (GB)"), N_("Cached (GB)")};
+    const char *diskRows[] = {N_("Available (GB)"), N_("Read (MB/s)"), N_("Write (MB/s)"),
+                              N_("Active time (%)")};
+
+    GtkWidget *columns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
+    gtk_widget_set_halign(columns, GTK_ALIGN_CENTER);
+    struct Column {
+        const char *icon;
+        const char *title;
+        const char *gaugeLabel;
+        const char *gaugeSub;
+        const char *const *rows;
+        size_t rowCount;
+    };
+    const Column specs[] = {
+        {"utilities-system-monitor-symbolic", N_("CPU overview"), N_("CPU"),
+         N_("Utilization"), cpuRows, std::size(cpuRows)},
+        {"video-display-symbolic", N_("GPU overview"), N_("GPU"), N_("Utilization"), gpuRows,
+         std::size(gpuRows)},
+        {"media-flash-symbolic", N_("Memory overview"), N_("Memory"), N_("Usage"), memRows,
+         std::size(memRows)},
+        {"drive-harddisk-symbolic", N_("Disk overview"), N_("C: disk"), N_("Free space"),
+         diskRows, std::size(diskRows)},
+    };
+    for (const Column &spec : specs) {
+        GtkWidget *column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+        gtk_box_append(GTK_BOX(column), makeColumnHeader(spec.icon, spec.title));
+        gtk_box_append(GTK_BOX(column),
+                       makeGauge(0.0, true, "—", "%", spec.gaugeLabel, spec.gaugeSub));
+        gtk_box_append(GTK_BOX(column), makeParamTable(spec.rows, spec.rowCount));
+        gtk_box_append(GTK_BOX(columns), column);
+    }
+    gtk_box_append(GTK_BOX(content), columns);
+
+    GtkWidget *note = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(note, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(note),
+                   makeBadge(N_("Under construction"), "badge-construction"));
+    gtk_box_append(GTK_BOX(note),
+                   makeLabel(N_("Values arrive with the M1 telemetry layer."), "card-note"));
+    gtk_box_append(GTK_BOX(content), note);
+    return wrapScrolled(content);
+}
+
 // 主页：模式 + 灯效 + 风扇（都是既有后端）；环形仪表还没接（M1 遥测层）
 GtkWidget *buildHome(AppContext &ctx) {
     GtkWidget *content = makePageContent();
@@ -674,7 +838,7 @@ GtkWidget *buildHome(AppContext &ctx) {
         gtk_box_append(GTK_BOX(content), strip);
     }
 
-    gtk_box_append(GTK_BOX(content), buildModeCard(ctx));
+    gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
     gtk_box_append(GTK_BOX(content), buildLightingCard(ctx, false));
     gtk_box_append(GTK_BOX(content), buildFanCard(ctx));
 
@@ -728,7 +892,7 @@ const SubPage kPerformanceSubs[] = {
     {"overview", N_("Overview"), N_("Performance · Overview"),
      N_("CPU / memory / disk are readable (M1 telemetry); GPU is unavailable while the "
         "dGPU is runtime-suspended"),
-     nullptr},
+     buildOverviewPage},
     {"thermal", N_("Thermal"), N_("Performance · Thermal"),
      N_("CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"), nullptr},
 };
@@ -799,16 +963,20 @@ void onSubToggled(GtkToggleButton *btn, gpointer data) {
 GtkWidget *makeSectionPage(const NavEntry &entry, AppContext &ctx) {
     GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-    GtkWidget *subnav = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    gtk_widget_add_css_class(subnav, "subnav");
-    gtk_widget_set_halign(subnav, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(subnav, 12);
-    gtk_box_append(GTK_BOX(page), subnav);
-
     GtkWidget *inner = gtk_stack_new();
     gtk_stack_set_transition_type(GTK_STACK(inner), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
     gtk_widget_set_vexpand(inner, true);
     gtk_box_append(GTK_BOX(page), inner);
+
+    // 官方把「概况 / 散热」这类分段控件放在底部居中，不是在顶部
+    GtkWidget *bottomBar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_css_class(bottomBar, "subnav-bar");
+    GtkWidget *subnav = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_add_css_class(subnav, "subnav");
+    gtk_widget_set_halign(subnav, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(subnav, true);
+    gtk_box_append(GTK_BOX(bottomBar), subnav);
+    gtk_box_append(GTK_BOX(page), bottomBar);
 
     GtkToggleButton *leader = nullptr;
     for (size_t i = 0; i < entry.subCount; ++i) {
@@ -843,8 +1011,8 @@ void onNavToggled(GtkToggleButton *btn, gpointer data) {
     gtk_stack_set_visible_child_name(GTK_STACK(ctx->stack), name);
     for (const NavEntry &entry : kNav) {
         if (std::strcmp(entry.name, name) == 0) {
-            setCrumb(*ctx, entry.title,
-                     entry.subCount > 0 ? entry.subs[0].title : nullptr);
+            // 官方面包屑是「顶层页名 | 系统」，第二段固定，不随子页变化
+            setCrumb(*ctx, entry.title, nullptr);
             return;
         }
     }
@@ -868,15 +1036,53 @@ gboolean selftestReport(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-gboolean selftestFinish(gpointer data) {
+// --ui-snapshot=<路径>：把整个窗口渲染成 PNG。
+// 为什么要这个：样式是纯观感，而这个环境里看不到屏幕（截图工具在 Wayland 下拿不到本进程窗口），
+// 有了自渲染就能自己核对，也方便以后做视觉回归。走 GtkWidgetPaintable，所以窗口自身的 CSS 背景
+// （顶部的蓝色辉光）也会被画进去；默认渲染器与 GL 无关，沙箱里也能出图。
+void writeWindowSnapshot(AppContext &ctx, const char *path) {
+    const int width = gtk_widget_get_width(ctx.window);
+    const int height = gtk_widget_get_height(ctx.window);
+    GdkPaintable *paintable = gtk_widget_paintable_new(ctx.window);
+    GtkSnapshot *snapshot = gtk_snapshot_new();
+    gdk_paintable_snapshot(paintable, snapshot, width, height);
+    GskRenderNode *node = gtk_snapshot_free_to_node(snapshot);
+
+    cairo_surface_t *surface =
+        cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_t *cr = cairo_create(surface);
+    if (node != nullptr) {
+        gsk_render_node_draw(node, cr);
+        gsk_render_node_unref(node);
+    }
+    const cairo_status_t status = cairo_surface_write_to_png(surface, path);
+    if (status == CAIRO_STATUS_SUCCESS) {
+        g_print("snapshot: %s (%dx%d)\n", path, width, height);
+    } else {
+        g_printerr("快照写文件失败：status=%d\n", static_cast<int>(status));
+        ctx.error = true;
+    }
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    g_object_unref(paintable);
+}
+
+gboolean finishFirstFrame(gpointer data) {
     auto *ctx = static_cast<AppContext *>(data);
-    selftestReport(data);
+    if (!ctx->snapshotPath.empty()) {
+        writeWindowSnapshot(*ctx, ctx->snapshotPath.c_str());
+    }
+    if (ctx->selftest) {
+        selftestReport(data);
+    }
     if (ctx->app != nullptr) {
         g_application_quit(ctx->app);
         ctx->app = nullptr; // 兜底超时与首次分配回调都可能触发，只退一次
     }
     return G_SOURCE_REMOVE;
 }
+
+gboolean selftestFinish(gpointer data) { return finishFirstFrame(data); }
 
 void onActivate(GtkApplication *app, gpointer userData) {
     auto *ctx = static_cast<AppContext *>(userData);
@@ -918,6 +1124,7 @@ void onActivate(GtkApplication *app, gpointer userData) {
     IconGroup &rail = addIconGroup(*ctx, 0.030, 16, 40);
 
     GtkToggleButton *navLeader = nullptr;
+    GtkToggleButton *wantedPage = nullptr;
     for (const NavEntry &entry : kNav) {
         // 先记父页，再建页面——否则子页会先于父页进入自检输出，看着像层级颠倒了
         ctx->pageLog.push_back(std::string("├─ ") + entry.name + "  " + _(entry.title));
@@ -943,12 +1150,27 @@ void onActivate(GtkApplication *app, gpointer userData) {
         } else {
             gtk_toggle_button_set_group(btn, navLeader);
         }
+        if (!ctx->initialPage.empty() && ctx->initialPage == entry.name) {
+            wantedPage = btn;
+        }
         g_signal_connect(btn, "toggled", G_CALLBACK(onNavToggled), ctx);
     }
 
     // 内容根节点（.ui 里的 content_root）挂帧时钟回调，把内容区尺寸喂给图标缩放逻辑。
     // 注意必须在 g_object_unref(builder) 之前查，否则 builder 已失效（gtk_builder_get_object
     // 会断言失败并返回 NULL）。
+    // 官方标题栏里面包屑在左侧，而 AdwHeaderBar 的 title-widget 是居中的，所以用 pack_start
+    if (auto *headerBar = GTK_WIDGET(gtk_builder_get_object(builder, "header_bar"));
+        headerBar != nullptr) {
+        if (auto *crumbBox = GTK_WIDGET(gtk_builder_get_object(builder, "crumb_box"));
+            crumbBox != nullptr) {
+            g_object_ref(crumbBox);
+            gtk_widget_unparent(crumbBox);
+            adw_header_bar_pack_start(ADW_HEADER_BAR(headerBar), crumbBox);
+            g_object_unref(crumbBox);
+        }
+    }
+
     GtkWidget *contentRoot = GTK_WIDGET(gtk_builder_get_object(builder, "content_root"));
     if (contentRoot == nullptr || !GTK_IS_WIDGET(contentRoot)) {
         LOG_S(ERROR) << "awcc.ui 里找不到 content_root，图标缩放不会生效";
@@ -959,7 +1181,9 @@ void onActivate(GtkApplication *app, gpointer userData) {
 
     g_object_unref(builder);
 
-    if (navLeader != nullptr) {
+    if (wantedPage != nullptr) {
+        gtk_toggle_button_set_active(wantedPage, TRUE); // --ui-page 指定的页
+    } else if (navLeader != nullptr) {
         gtk_toggle_button_set_active(navLeader, TRUE); // 默认停在第一个页面
     }
     gtk_window_present(GTK_WINDOW(ctx->window));
@@ -983,6 +1207,8 @@ int Ui::Run(int argc, char **argv, const Services &services) {
     // 本程序自己的开关已由 main.cpp 处理完，这里滤掉以免「Unknown option」；其余参数
     // （如 --display）留给 GTK。
     bool selftest = false;
+    std::string snapshotPath;      // --ui-snapshot=<路径>：把窗口渲染成 PNG（见下）
+    std::string initialPage;       // --ui-page=<name>：启动时停在哪一页（截图/自检用）
     std::vector<char *> args;
     args.reserve(static_cast<size_t>(argc));
     for (int i = 0; i < argc; ++i) {
@@ -994,11 +1220,21 @@ int Ui::Run(int argc, char **argv, const Services &services) {
             selftest = true;
             continue;
         }
+        if (i > 0 && arg.starts_with("--ui-page=")) {
+            initialPage = std::string(arg.substr(std::strlen("--ui-page=")));
+            continue;
+        }
+        if (i > 0 && arg.starts_with("--ui-snapshot=")) {
+            snapshotPath = std::string(arg.substr(std::strlen("--ui-snapshot=")));
+            continue;
+        }
         args.push_back(argv[i]);
     }
 
     static AppContext ctx;
     ctx.selftest = selftest;
+    ctx.snapshotPath = snapshotPath;
+    ctx.initialPage = initialPage;
     ctx.thermals = services.thermals;
     ctx.acpi = services.acpi;
     ctx.effects = services.effects;
