@@ -71,6 +71,10 @@ class Telemetry {
 
 ### M0 骨架：能起窗口、能切页（全部页面先带「施工中」）
 
+M0.1–M0.3 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui` 起出 GTK4 窗口并经
+`GtkApplication` 注册到会话总线，imgui / glfw / OpenGL / X11 / stb 与上游 ImGui 界面一并退役，
+模式图标抽成 `assets/modes/*.png`。余下 M0.4（导航与 12 个页面）与 M0.5（深色 CSS）。
+
 | 步骤 | 产物 | 验证命令 | 完成判据 |
 | --- | --- | --- | --- |
 | M0.1 构建整合 | `CMakeLists.txt` 用 `pkg_check_modules` 找 `gtk4` / `libadwaita-1`；新增 `src/ui/`、`include/Ui.h` | `pkg-config --exists gtk4 libadwaita-1 && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && ninja -C build` | 配置与编译通过 |

@@ -13,8 +13,8 @@
 
 - 两处**灯效**改动依赖本机固件的两条行为（见第三节）。其他机型——尤其是多区键盘——行为可能
   不同，**未验证、不保证**，甚至可能把原本正常的灯效弄坏。不是 G16 7630 请用上游版本。
-- **imgui 钉版本**那一处与机型无关：上游把 imgui 钉在 `master`（1.93 WIP），2026-09 那批提交
-  会让 Color 的取色弹窗渲染成黑窗。这一处对任何机型都适用。
+- **前端已换成 GTK4**（2026-09-22，见第九节）：上游的 ImGui 界面与「imgui 钉版本」那处补丁
+  都已退役，取色弹窗黑窗的问题随之消失（改用 GTK4 自带的 `GtkColorDialogButton`）。
 - 作者只有这一台设备，没有条件做跨机型回归测试。
 
 ## 二、改了什么
@@ -24,7 +24,9 @@
 | 文件 | 改动 | 原因 |
 | --- | --- | --- |
 | `src/EffectController.cpp` | 7 个灯效（`StaticColor` / `Breathe` / `Spectrum` / `Wave` / `Rainbow` / `BackAndForth` / `DefaultBlue`）在 `SendAnimationConfigSave` + `SendAnimationSetDefault(0x0061)` 之后再发一次 `SendAnimationPlay(0x0061)`；并把逐 zone 的 `SendZoneSelect(1, {zone})` 改成一次 `SendZoneSelect(1, m_zoneAll)` | 见第三节 |
-| `CMakeLists.txt` | imgui 的 `GIT_TAG` 从 `master` 钉到 `6acba3b47d2ac4c7bb5ffb6ab04bcd896b3d3658`（2026-06-03，`1.92.9 WIP`），并关掉 `GIT_SHALLOW` | imgui master 是 1.93 WIP 分支。2026-09 那批提交在本机上把 Color 的取色弹窗渲染成全黑（还能选、也能 Apply，只是看不见颜色）。上游 v1.19.0 的发布二进制用的是 2026-06-03 的版本，取色器正常 |
+| `src/ui/`、`include/Ui.h` | 新增 GTK4 前端；删除上游的 `src/gui/`（ImGui 界面）与 `src/resources.cpp` | 见 `DESIGN.md` 第二节与第九节 |
+| `CMakeLists.txt` | 改用 `pkg-config` 接 GTK4 / libadwaita；去掉 imgui / glfw / OpenGL / X11 / stb 依赖 | 见 `DESIGN.md` 第二节 |
+| `assets/modes/*.png` | 从 `src/resources.cpp` 抽出 5 个模式图标（`quiteMode` / `balancedMode` / `performanceMode` / `batteryMode` / `gMode`） | 那个 15 万行文件里除 4 套 Roboto 字体外只有这 5 张图；字体退役、图标留作界面素材 |
 | `CMakeLists.txt` | 版本号改为按 `version:refname` 取版本最大的日期式 tag，`VERSION` 宏用完整串 | 见第六节 |
 | `scripts/release.sh` | 新增：按日期算当天第几次打包，可选打 tag 与推送 | 见第六节 |
 | `.github/workflows/build.yml` | tag 触发规则、版本传参与产物命名改用日期式 | 见第六节 |
@@ -47,18 +49,13 @@
 
 ## 四、构建
 
-依赖：`cmake`、`ninja`、`meson`（libevdev 由 meson 配置），其余（loguru / nlohmann-json /
-glfw / imgui / libusb / libevdev / stb）由 CMake 自己拉取。
+依赖：**GTK4 与 libadwaita 来自系统包**（`gtk4`、`libadwaita`，经 `pkg-config` 查找）；另有
+`cmake`、`ninja`、`meson`（libevdev 由 meson 配置）与 `pkg-config` 本身，其余
+（loguru / nlohmann-json / libusb / libevdev）由 CMake 自己拉取。
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 ninja -C build
-```
-
-换过 imgui 的 `GIT_TAG` 之后要先清一次缓存再配置，否则 CMake 会在旧的浅克隆里找不到指定提交：
-
-```bash
-rm -rf build/_deps/imgui-src build/_deps/imgui-subbuild build/_deps/imgui-build
 ```
 
 ## 五、安装
@@ -137,10 +134,9 @@ GUI：打开 Alienware Command Center → 选 `Static` 或其它灯效 → 点 C
 
 ## 九、后续计划
 
-- 重做前端 UI，**改用 GTK4**（2026-09-22 定），布局对齐戴尔官方 AWCC，还原使用体验。**设计与
-  边界见 `DESIGN.md`，拆解与验证命令见 `TODO.md`**——设计不在这份文件里重复。现有界面在
-  `src/gui/Gui.cpp` 与 `src/gui/Render.cpp`，用 ImGui 绘制；GTK4 落地后这套渲染代码与
-  `CMakeLists.txt` 里 imgui 钉版本那处改动（第二节）会一并退出。
+- 重做前端 UI，**已改用 GTK4**（2026-09-22 定，M0 骨架已完成）：布局对齐戴尔官方 AWCC，
+  还原使用体验。**设计与边界见 `DESIGN.md`，拆解与验证命令见 `TODO.md`**——设计不在这份
+  文件里重复。上游的 ImGui 界面（`src/gui/`）与 `src/resources.cpp` 已删除。
 - 保持与上游同步；上游修好第三节两条后即丢弃本地补丁。
 
 UI 重做的对照素材是戴尔官方 AWCC 6.14.20.0（Windows）的 14 张界面截图，放在
@@ -172,4 +168,5 @@ UI 重做的对照素材是戴尔官方 AWCC 6.14.20.0（Windows）的 14 张界
 
 依赖许可上有一点要留意：`libusb` 是 **LGPL-2.1**，而本工程把它静态链接进可执行文件
 （`_deps/libusb-build/libusb-1.0.a`）。发布二进制时需按 LGPL 提供可重新链接的形式，
-或改为动态链接系统 libusb。内置 Roboto 字体为 Apache-2.0。
+或改为动态链接系统 libusb。原先内置的 Roboto 字体（Apache-2.0）已随 ImGui 前端退役；
+新增的 `assets/modes/*.png` 是上游仓库里的模式图标，随本 fork 一并按 GPL-3.0 分发。
