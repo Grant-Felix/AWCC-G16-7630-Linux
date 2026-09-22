@@ -115,6 +115,28 @@ sudo install -Dm755 build/awcc /usr/local/bin/awcc
 可执行文件名仍是 `awcc`：仓名改了，但 systemd 单元、桌面入口与脚本都按这个名字调用，
 改名会牵连这些集成，因此保持不动。
 
+### 5.3 从上游 `awcc-bin` 迁移到本 fork
+
+上游的 `awcc-bin`（以及手动装在 `/usr/local/bin/awcc` 的那份）与本 fork 都占 `/usr/bin/awcc`：
+`/usr/local/bin` 在 PATH 里靠前，会一路盖住包里的那份；本包又声明了 `conflicts=('awcc-bin')`，
+不先卸掉，`pacman -U` 会直接以冲突拒绝安装。所以迁移有固定顺序，脚本在
+`scripts/migrate-from-upstream-awcc.sh`（自己不提权，用 `sudo` 跑）：
+
+```bash
+sudo scripts/migrate-from-upstream-awcc.sh
+# 国内下载慢就走 Gitee 镜像：
+sudo AWCC_ASSET_URL=https://gitee.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst \
+     scripts/migrate-from-upstream-awcc.sh
+```
+
+它按顺序做六件事：停 `awccd` → 卸 `awcc-bin` → 把手装的 `/usr/local/bin/awcc` 改名成
+`.upstream.bak`（**不直接删**，留作回滚）→ 下载并 `pacman -U` 本包 → `udevadm control --reload`
+与 `systemctl daemon-reload` → `enable --now awccd` 并自检（二进制自报版本、pacman 包名、服务
+状态、桌面入口 `Exec=` 指向）。两侧的 `awccd.service` 实测**逐字节相同**，守护进程行为不变。
+
+回滚：`sudo pacman -R awcc-g16-7630-linux`，再把 `/usr/local/bin/awcc.upstream.bak` 挪回
+`/usr/local/bin/awcc`（或从 AUR 装回 `awcc-bin`）。
+
 ## 六、版本号与打包
 
 本 fork 的版本号用**发布日期式**：`v<YY>.<M>.<D>-<x>`，`x` 是当天第几次打包，**从 1 起算、
