@@ -32,3 +32,6 @@ debian/files
 debian/debhelper-build-stamp
 debian/*.substvars
 packaging/rpm/rpmbuild/
+
+# 参考材料（本地下载的准则网页），与官方 UI 截图同理：不入库
+AUR提交准则/
