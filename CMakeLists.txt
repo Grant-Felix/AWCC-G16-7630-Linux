@@ -191,7 +191,8 @@ foreach(po_file ${AWCC_PO_FILES})
   list(APPEND AWCC_MO_FILES ${mo_file})
   install(FILES ${mo_file}
           DESTINATION ${AWCC_LOCALEDIR_INSTALL}/${lang}/LC_MESSAGES
-          RENAME awcc.mo)
+          RENAME awcc.mo
+          COMPONENT awcc)
 endforeach()
 
 add_custom_target(translations ALL DEPENDS ${AWCC_MO_FILES})
@@ -248,21 +249,23 @@ set(AWCC_CONFIG_DIR
     "/etc/awcc"
     CACHE PATH "Directory for configuration files")
 
-install(TARGETS ${APP_NAME} RUNTIME DESTINATION /usr/bin)
+install(TARGETS ${APP_NAME} RUNTIME DESTINATION /usr/bin COMPONENT awcc)
 
 install(
   DIRECTORY app/
   DESTINATION /usr/share/applications
+  COMPONENT awcc
   FILES_MATCHING
   PATTERN "*.desktop")
 
 install(
   DIRECTORY app/
   DESTINATION /usr/share/icons
+  COMPONENT awcc
   FILES_MATCHING
   PATTERN "*.png")
 
-install(FILES app/70-awcc.rules DESTINATION ${UDEV_RULES_DIR})
+install(FILES app/70-awcc.rules DESTINATION ${UDEV_RULES_DIR} COMPONENT awcc)
 
 if(OPENRC)
   message(STATUS "Configuring for OpenRC installation")
@@ -270,6 +273,7 @@ if(OPENRC)
     FILES app/awccd.initd
     DESTINATION /etc/init.d
     RENAME awccd
+    COMPONENT awcc
     PERMISSIONS
       OWNER_READ
       OWNER_WRITE
@@ -284,7 +288,12 @@ else()
       "/etc/systemd/system"
       CACHE PATH "Directory for systemd service files")
 
-  install(FILES app/awccd.service DESTINATION ${SYSTEMD_UNIT_DIR})
+  install(FILES app/awccd.service DESTINATION ${SYSTEMD_UNIT_DIR} COMPONENT awcc)
 endif()
 
-install(FILES database.json DESTINATION ${AWCC_CONFIG_DIR})
+install(FILES database.json DESTINATION ${AWCC_CONFIG_DIR} COMPONENT awcc)
+
+# 说明：deb / rpm 的包不做在 CMake 里。Debian 用 debian/ + dpkg-buildpackage、RPM 用
+# packaging/rpm/awcc.spec + rpmbuild（各自的官方方案），由 scripts/package.sh 驱动。
+# 上面 install() 里的 COMPONENT awcc 是给这两个方案用的：只装我们自己那一个组件，
+# 免得把 FetchContent 拉来的依赖（libusb 的头文件与静态库）也装进系统。

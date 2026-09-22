@@ -21,3 +21,14 @@ AWCC Dell官方UI截图/
 
 # gettext / 编辑器留下的备份文件
 *~
+
+# 打包产物（scripts/package.sh）：deb/rpm/Arch 的中间与输出
+*.deb
+*.rpm
+*.pkg.tar.zst
+debian/awcc/
+debian/.debhelper/
+debian/files
+debian/debhelper-build-stamp
+debian/*.substvars
+packaging/rpm/rpmbuild/

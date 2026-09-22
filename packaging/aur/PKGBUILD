@@ -1,0 +1,35 @@
+# Maintainer: Felix
+# 从 GitHub 上的 release tag 构建（Gitee 是同一份代码的国内镜像）。
+#
+# 注意版本号映射：Arch 的 pkgver 不允许含连字符，所以上游的 "26.9.22-2" 在这里写成
+# "26.9.22_2"。发布新版时两处都要改：pkgver 与下面 source 里的标签。
+pkgname=awcc-g16-7630-linux
+pkgver=26.9.22_2
+pkgrel=1
+pkgdesc="Alienware Command Center for Dell G16 7630 (GTK4 frontend)"
+arch=('x86_64')
+url="https://github.com/Grant-Felix/AWCC-G16-7630-Linux"
+license=('GPL-3.0-only')
+# libusb 与 libevdev 是静态链接进来的，不需要列为依赖
+depends=('gtk4' 'libadwaita' 'glib2' 'gcc-libs')
+# libusb 会用到 libudev.h；Arch 上它在 systemd-libs 里
+makedepends=('cmake' 'ninja' 'meson' 'git' 'pkgconf' 'systemd-libs')
+provides=('awcc')
+conflicts=('awcc' 'awcc-bin')
+# 上游 tag 是 v26.9.22-2，pkgver 里用下划线，这里再换回连字符
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Grant-Felix/AWCC-G16-7630-Linux/archive/refs/tags/v${pkgver/_/-}.tar.gz")
+sha256sums=('90515f47190138f9b8312a285a15352b8046898d73e8fb0f5a0db5a337c800e8')
+
+build() {
+  local srcdir_name="AWCC-G16-7630-Linux-${pkgver/_/-}"
+  cmake -S "$srcdir/$srcdir_name" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DAWCC_VERSION="${pkgver/_/-}"
+  ninja -C build
+}
+
+package() {
+  local srcdir_name="AWCC-G16-7630-Linux-${pkgver/_/-}"
+  DESTDIR="$pkgdir" cmake --install build --component awcc
+  install -Dm644 "$srcdir/$srcdir_name/LICENSE" \
+          "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

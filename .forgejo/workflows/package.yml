@@ -1,0 +1,99 @@
+# Forgejo Actions：三个发行版的安装包，各用**各自官方的打包方案**。
+#
+# 为什么在这里做：本机是 Arch，没有 debhelper/dpkg-dev 与 rpm-build；这些官方工具链只有
+# 各自发行版里有，所以每个作业跑在对应发行版的官方容器里（runner 的 container.network
+# 已指到 Forgejo 的网络，作业容器能解析到实例容器名 server 并调 API 挂产物）。
+#
+# 触发：推日期式 tag（v26.x.y-n）时自动跑；也可以在 Actions 页面手动 dispatch。
+# 产物直接挂到该 tag 的 Release 上（见 scripts/attach-package.sh）。
+# GitHub / Gitee 两个镜像的 Release 需要同样的包时，本地跑 scripts/publish-packages.sh。
+name: Package
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要构建并挂包的 tag（留空则用当前 ref）"
+        required: false
+
+env:
+  FORGEJO_API: http://server:3000/api/v1
+  REPO: Felix/AWCC-G16-7630-Linux
+
+jobs:
+  deb:
+    name: Debian 包（dpkg-buildpackage）
+    runs-on: docker
+    container:
+      image: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建 deb 并挂到 Release
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -e
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          # ca-certificates 必须显式装：官方镜像里没有它，git 拉 FetchContent 依赖会报
+          #   "server certificate verification failed. CAfile: none"
+          # build-essential 是 dpkg-buildpackage 隐含要求的构建依赖
+          apt-get install -y -qq --no-install-recommends ca-certificates build-essential \
+              debhelper cmake ninja-build meson git pkg-config libgtk-4-dev \
+              libadwaita-1-dev libudev-dev
+          rm -rf build .cache
+          dpkg-buildpackage -b -us -uc
+          ls -l /*.deb
+          ./scripts/attach-package.sh /*.deb
+
+  rpm:
+    name: Fedora 包（rpmbuild + awcc.spec）
+    runs-on: docker
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建 rpm 并挂到 Release
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -e
+          dnf install -y -q ca-certificates rpm-build cmake ninja-build gcc-c++ meson git \
+              curl pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel
+          rm -rf build .cache
+          mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          # spec 的 Source0 指向 tag 归档，rpmbuild 不会自己下载，先放到 SOURCES
+          ver="${RELEASE_TAG#v}"
+          curl -fsSL "https://github.com/Grant-Felix/AWCC-G16-7630-Linux/archive/refs/tags/v$ver.tar.gz" \
+               -o "rpmbuild/SOURCES/v$ver.tar.gz"
+          rpmbuild -bb --define "_topdir $PWD/rpmbuild" packaging/rpm/awcc.spec
+          ls -l rpmbuild/RPMS/*/
+          ./scripts/attach-package.sh rpmbuild/RPMS/*/*.rpm
+
+  arch:
+    name: Arch 包（makepkg + PKGBUILD）
+    runs-on: docker
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建 Arch 包并挂到 Release
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -e
+          pacman -Sy --noconfirm --needed base-devel cmake ninja meson git sudo
+          # makepkg 不允许以 root 运行；仓库里 PKGBUILD 的 pkgver 是 26.9.22_2 这种下划线写法
+          useradd -m builder
+          workdir=/tmp/aur-build
+          rm -rf "$workdir" && mkdir -p "$workdir"
+          cp packaging/aur/PKGBUILD "$workdir/"
+          chown -R builder "$workdir"
+          su builder -c "cd $workdir && makepkg -f --nodeps --noconfirm"
+          ls -l "$workdir"/*.pkg.tar.zst
+          ./scripts/attach-package.sh "$workdir"/*.pkg.tar.zst

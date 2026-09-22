@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+# Debian 官方打包流程（debhelper）。版本串从 debian/changelog 取，保证与 tag 同串。
+export DH_VERBOSE = 1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+# CMake 工程：libusb / libevdev / loguru 等由 CMake 自己拉取（见 CMakeLists.txt）
+override_dh_auto_configure:
+	cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+	      -DAWCC_VERSION=$(shell dpkg-parsechangelog -SVersion)
+
+override_dh_auto_build:
+	ninja -C build
+
+# 只装我们自己那个组件（COMPONENT awcc）；依赖自带的 install 规则不装进系统
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/awcc cmake --install build --component awcc
+
+override_dh_auto_test:
+	@echo "no unit tests; 见 TODO.md 的验证命令（--ui-selftest / --ui-snapshot）"

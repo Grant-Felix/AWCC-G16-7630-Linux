@@ -1,0 +1,20 @@
+Source: awcc
+Section: utils
+Priority: optional
+Maintainer: Felix <noreply@example.com>
+Build-Depends: debhelper-compat (= 13), cmake, ninja-build, meson, git, pkg-config,
+ libgtk-4-dev, libadwaita-1-dev, g++
+Standards-Version: 4.6.2
+Homepage: https://github.com/Grant-Felix/AWCC-G16-7630-Linux
+Rules-Requires-Root: no
+Vcs-Git: https://github.com/Grant-Felix/AWCC-G16-7630-Linux.git
+
+Package: awcc
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Alienware Command Center for Dell G16 7630 (GTK4 frontend)
+ Unofficial Alienware Command Center for Linux: a fork of tr1xem/AWCC adapted
+ for the Dell G16 7630, with a GTK4 frontend. Provides thermal modes, CPU/GPU
+ fan boost, turbo boost, keyboard lighting effects and brightness control.
+ .
+ Only validated on the Dell G16 7630; other models are not supported.

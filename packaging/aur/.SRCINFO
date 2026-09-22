@@ -1,0 +1,23 @@
+pkgbase = awcc-g16-7630-linux
+	pkgdesc = Alienware Command Center for Dell G16 7630 (GTK4 frontend)
+	pkgver = 26.9.22_2
+	pkgrel = 1
+	url = https://github.com/Grant-Felix/AWCC-G16-7630-Linux
+	arch = x86_64
+	license = GPL-3.0-only
+	makedepends = cmake
+	makedepends = ninja
+	makedepends = meson
+	makedepends = git
+	makedepends = pkgconf
+	depends = gtk4
+	depends = libadwaita
+	depends = glib2
+	depends = gcc-libs
+	provides = awcc
+	conflicts = awcc
+	conflicts = awcc-bin
+	source = awcc-g16-7630-linux-26.9.22_2.tar.gz::https://github.com/Grant-Felix/AWCC-G16-7630-Linux/archive/refs/tags/v26.9.22-2.tar.gz
+	sha256sums = 90515f47190138f9b8312a285a15352b8046898d73e8fb0f5a0db5a337c800e8
+
+pkgname = awcc-g16-7630-linux

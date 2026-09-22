@@ -60,7 +60,51 @@ ninja -C build
 
 ## 五、安装
 
+### 5.1 发行版包（推荐）
+
+三个发行版各用**各自官方的打包方案**：Debian 走 `debian/` + `dpkg-buildpackage`，Fedora 走
+`packaging/rpm/awcc.spec` + `rpmbuild`，Arch 走 `packaging/aur/PKGBUILD` + `makepkg`。本机是
+Arch，没有 debhelper/dpkg-dev 与 rpm-build，所以 `scripts/package.sh` 会在**对应发行版的官方
+镜像容器里**构建 deb 与 rpm（需要 docker），Arch 包直接本机打。
+
+包挂在 Release 上（`v26.9.22-2` 这批已挂），安装命令：
+
 ```bash
+# Debian / Ubuntu
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc_26.9.22-2_amd64.deb
+sudo apt install ./awcc_26.9.22-2_amd64.deb
+
+# Fedora / RHEL
+sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22-2.x86_64.rpm
+
+# Arch（预编译包）
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+sudo pacman -U awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+
+# Arch（AUR）
+paru -S awcc-g16-7630-linux
+yay  -S awcc-g16-7630-linux
+```
+
+国内把 URL 里的 `github.com/Grant-Felix` 换成 `gitee.com/Grant-Felix` 即可，产物同一份。
+
+**版本号在包管理器里的写法**（平台规则所限，映射关系固定）：Debian 直接用 `26.9.22-2`；
+RPM 拆成 `Version: 26.9.22` + `Release: 2`；Arch 的 `pkgver` 不许含连字符，写作 `26.9.22_2`
+（`pkgrel=1`）。RPM 的 `Release` 不加 `%{?dist}`，好让产物名与 tag 同串。
+
+**构建基线与最低版本**：deb 在 `debian:trixie` 里构建——bookworm 的 GTK 只有 4.8，而代码用了
+GTK 4.10 才有的 `GtkColorDialogButton`（libadwaita 也需要 ≥ 1.4），所以 bookworm 用户要么开
+backports、要么按 5.2 从源码构建。deb 依赖里的最低版本由 `dh_shlibdeps` 按符号自动算出；
+rpm 在 `fedora:latest` 里构建，Requires 写 `gtk4 / libadwaita / glib2`。
+
+**运行时前提**：Dell G16 7630；热模式/风扇需要 `acpi_call` 内核模块；udev 规则随包安装；
+守护进程用 `sudo systemctl enable --now awccd` 起来。
+
+### 5.2 从源码构建（不打包）
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+ninja -C build
 sudo install -Dm755 build/awcc /usr/local/bin/awcc
 ```
 

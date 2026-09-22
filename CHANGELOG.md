@@ -33,6 +33,32 @@
   `--ui-page=` / `--ui-subpage=`（指定截图页）
 - `DESIGN.md` / `TODO.md`：设计、版式规格、实施拆解与验证命令
 
+### 📦 三个发行版的安装包
+
+各用**各自官方的打包方案**，产物挂在 Release 上（国内用 Gitee 镜像的同一批文件）：
+
+| 发行版 | 打包方案 | 产物 |
+| --- | --- | --- |
+| Debian / Ubuntu | `debian/` + `dpkg-buildpackage`（debhelper） | `awcc_26.9.22-2_amd64.deb` |
+| Fedora / RHEL | `packaging/rpm/awcc.spec` + `rpmbuild` | `awcc-26.9.22-2.x86_64.rpm` |
+| Arch（预编译） | `packaging/aur/PKGBUILD` + `makepkg` | `awcc-26.9.22_2-1-x86_64.pkg.tar.zst` |
+| Arch（AUR） | 同上的 PKGBUILD | 包名 `awcc-g16-7630-linux` |
+
+本机是 Arch，没有 debhelper/dpkg-dev 与 rpm-build，所以 `scripts/package.sh` 在
+**对应发行版的官方镜像容器里**跑它们的官方工具链（需要 docker），Arch 包直接本机打。
+
+安装命令（从 Release 直接装，Go 国内把 `github.com/Grant-Felix` 换成 `gitee.com/Grant-Felix`）：
+
+```bash
+sudo apt install ./awcc_26.9.22-2_amd64.deb                     # Debian / Ubuntu
+sudo dnf install ./awcc-26.9.22-2.x86_64.rpm                    # Fedora / RHEL
+sudo pacman -U awcc-26.9.22_2-1-x86_64.pkg.tar.zst              # Arch
+paru -S awcc-g16-7630-linux                                     # Arch（AUR）
+```
+
+版本号在包管理器里的写法：Debian 直接用 `26.9.22-2`；RPM 拆成 `Version: 26.9.22` +
+`Release: 2`；Arch 的 `pkgver` 不许含连字符，写作 `26.9.22_2`。
+
 ### ⚠️ 已知欠缺
 
 - 性能页数据未接（等 M1 遥测层），当前显示「—」

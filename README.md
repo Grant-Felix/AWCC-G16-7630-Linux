@@ -28,6 +28,53 @@ light effects, g-mode, and autoboost.
 > like keyboard,mouse,monitors etc) try [AlienFX](https://github.com/tr1xem/alienfx-linux/)
 > it would have a gui interface in awcc itself
 
+
+---
+
+## 📦 Install (prebuilt packages)
+
+Packages are attached to the [releases](https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases).
+Pick the one for your distribution — the commands download straight from the release:
+
+**Debian / Ubuntu (`.deb`)**
+
+```bash
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc_26.9.22-2_amd64.deb
+sudo apt install ./awcc_26.9.22-2_amd64.deb
+```
+
+**Fedora / RHEL (`.rpm`)**
+
+```bash
+sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22-2.x86_64.rpm
+```
+
+**Arch Linux (pacman, prebuilt)**
+
+```bash
+curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-2/awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+sudo pacman -U awcc-26.9.22_2-1-x86_64.pkg.tar.zst
+```
+
+**Arch Linux (AUR)**
+
+```bash
+paru -S awcc-g16-7630-linux
+# or
+yay  -S awcc-g16-7630-linux
+```
+
+Mirror (mainland China): the same files are on
+[Gitee](https://gitee.com/Grant-Felix/AWCC-G16-7630-Linux/releases) — replace
+`github.com/Grant-Felix` with `gitee.com/Grant-Felix` in the URLs above.
+
+> Arch note: the AUR `pkgver` cannot contain a hyphen, so the release `26.9.22-2`
+> appears as `26.9.22_2` there. RPM splits it into `Version: 26.9.22` / `Release: 2`.
+
+Runtime requirements: a Dell G16 7630, the `acpi_call` kernel module (for thermal
+modes / fan control) and the udev rules shipped by the package. The daemon runs as
+a systemd service: `sudo systemctl enable --now awccd`.
+
 ## ✨ Features
 
 - 🖥️ **GUI and CLI support**
