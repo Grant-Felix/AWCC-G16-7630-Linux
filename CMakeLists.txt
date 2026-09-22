@@ -200,13 +200,12 @@ add_custom_target(translations ALL DEPENDS ${AWCC_MO_FILES})
 add_custom_target(
   pot
   COMMAND
+    # 传相对路径：xgettext 会把源码位置写进 pot，用绝对路径会把本机目录泄露出去
     ${XGETTEXT} --language=C++ --keyword=_ --keyword=N_ --from-code=UTF-8
-    --package-name=awcc --output=${CMAKE_CURRENT_SOURCE_DIR}/po/awcc.pot
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/Ui.cpp
+    --package-name=awcc --output=po/awcc.pot src/ui/Ui.cpp
   COMMAND
     ${XGETTEXT} --language=Glade --from-code=UTF-8 --package-name=awcc -j
-    --output=${CMAKE_CURRENT_SOURCE_DIR}/po/awcc.pot
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/awcc.ui
+    --output=po/awcc.pot src/ui/awcc.ui
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "生成 po/awcc.pot")
 

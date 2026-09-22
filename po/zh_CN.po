@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: awcc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-22 13:39+0800\n"
+"POT-Creation-Date: 2026-09-22 13:49+0800\n"
 "PO-Revision-Date: 2026-09-22 13:10+0800\n"
 "Last-Translator: Felix\n"
 "Language-Team: \n"
@@ -18,611 +18,572 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:286
+#: src/ui/Ui.cpp:346
 msgid "Battery saver"
 msgstr "电池"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:287
+#: src/ui/Ui.cpp:347
 msgid "Cool"
 msgstr "酷冷"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:288
+#: src/ui/Ui.cpp:348
 msgid "Quiet"
 msgstr "静音"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:289
+#: src/ui/Ui.cpp:349
 msgid "Balanced"
 msgstr "均衡"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:290
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1100
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1293
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1304
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:74
+#: src/ui/Ui.cpp:350 src/ui/Ui.cpp:1160 src/ui/Ui.cpp:1353 src/ui/Ui.cpp:1364
+#: src/ui/awcc.ui:74
 msgid "Performance"
 msgstr "性能"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:291
+#: src/ui/Ui.cpp:351
 msgid "G mode"
 msgstr "G 模式"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:370
+#: src/ui/Ui.cpp:430
 msgid "Static"
 msgstr "静态"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:370
+#: src/ui/Ui.cpp:430
 msgid "Breathe"
 msgstr "呼吸"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:371
+#: src/ui/Ui.cpp:431
 msgid "Spectrum"
 msgstr "频谱"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:371
+#: src/ui/Ui.cpp:431
 msgid "Wave"
 msgstr "波浪"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:372
+#: src/ui/Ui.cpp:432
 msgid "Rainbow"
 msgstr "彩虹"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:372
+#: src/ui/Ui.cpp:432
 msgid "Back and forth"
 msgstr "往复"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:373
+#: src/ui/Ui.cpp:433
 msgid "Default blue"
 msgstr "默认蓝"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:399
+#: src/ui/Ui.cpp:459
 msgid "Keyboard lighting"
 msgstr "键盘灯效"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:399
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:497
+#: src/ui/Ui.cpp:459 src/ui/Ui.cpp:557
 msgid "Applies immediately"
 msgstr "立即生效"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:418
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1007
+#: src/ui/Ui.cpp:478 src/ui/Ui.cpp:1067
 msgid "Color"
 msgstr "颜色"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:452
+#: src/ui/Ui.cpp:512
 msgid "Brightness"
 msgstr "亮度"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:479
+#: src/ui/Ui.cpp:539
 msgid "Duration"
 msgstr "持续时间"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:497
+#: src/ui/Ui.cpp:557
 msgid "Fan and turbo"
 msgstr "风扇与睿频"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:529
+#: src/ui/Ui.cpp:589
 msgid "CPU fan"
 msgstr "CPU 风扇"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:550
+#: src/ui/Ui.cpp:610
 msgid "GPU fan"
 msgstr "GPU 风扇"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:552
+#: src/ui/Ui.cpp:612
 msgid "Not available on this model"
 msgstr "本机型不支持"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:557
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:581
+#: src/ui/Ui.cpp:617 src/ui/Ui.cpp:641
 msgid "Turbo boost"
 msgstr "睿频加速"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:579
+#: src/ui/Ui.cpp:639
 msgid "Fan boost"
 msgstr "风扇加速"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:580
+#: src/ui/Ui.cpp:640
 msgid "Thermal modes"
 msgstr "散热模式"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:582
+#: src/ui/Ui.cpp:642
 msgid "CPU temperature"
 msgstr "CPU 温度"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:583
+#: src/ui/Ui.cpp:643
 msgid "GPU temperature"
 msgstr "GPU 温度"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:584
+#: src/ui/Ui.cpp:644
 msgid "Brightness control"
 msgstr "亮度控制"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:585
+#: src/ui/Ui.cpp:645
 msgid "G mode toggle"
 msgstr "G 模式开关"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:611
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1060
+#: src/ui/Ui.cpp:671 src/ui/Ui.cpp:1120
 msgid "Device"
 msgstr "设备"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:612
+#: src/ui/Ui.cpp:672
 msgid "Model"
 msgstr "机型"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:614
+#: src/ui/Ui.cpp:674
 msgid "Version"
 msgstr "版本"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:616
+#: src/ui/Ui.cpp:676
 msgid "Keyboard zones"
 msgstr "键盘分区"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:619
+#: src/ui/Ui.cpp:679
 msgid "Current mode"
 msgstr "当前模式"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:622
+#: src/ui/Ui.cpp:682
 msgid "Daemon"
 msgstr "守护进程"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:623
+#: src/ui/Ui.cpp:683
 msgid "running (socket)"
 msgstr "正在运行（socket）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:623
+#: src/ui/Ui.cpp:683
 msgid "not running (pkexec fallback)"
 msgstr "未运行（退回 pkexec）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:638
+#: src/ui/Ui.cpp:698
 msgid "Features"
 msgstr "支持的特性"
 
 # ── 状态徽标 ────────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:670
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1067
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1122
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1185
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1216
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1229
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1248
+#: src/ui/Ui.cpp:730 src/ui/Ui.cpp:1127 src/ui/Ui.cpp:1182 src/ui/Ui.cpp:1245
+#: src/ui/Ui.cpp:1276 src/ui/Ui.cpp:1289 src/ui/Ui.cpp:1308
 msgid "Under construction"
 msgstr "施工中"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:877
+#: src/ui/Ui.cpp:937
 msgid "(none)"
 msgstr "（未选择）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:895
+#: src/ui/Ui.cpp:955
 msgid "Pure black"
 msgstr "纯黑"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:895
+#: src/ui/Ui.cpp:955
 msgid "Default"
 msgstr "默认"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:896
+#: src/ui/Ui.cpp:956
 msgid "Follow system"
 msgstr "跟随系统"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:897
+#: src/ui/Ui.cpp:957
 msgid "Official glow"
 msgstr "官方辉光"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:898
+#: src/ui/Ui.cpp:958
 msgid "Custom color"
 msgstr "自定义颜色"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:899
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1021
+#: src/ui/Ui.cpp:959 src/ui/Ui.cpp:1081
 msgid "Image"
 msgstr "图片"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:954
+#: src/ui/Ui.cpp:1014
 msgid "Choose background image"
 msgstr "选择背景图片"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:956
+#: src/ui/Ui.cpp:1016
 msgid "Images"
 msgstr "图片"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:981
+#: src/ui/Ui.cpp:1041
 msgid "Background"
 msgstr "背景"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:981
+#: src/ui/Ui.cpp:1041
 msgid "Saved to the user config file"
 msgstr "保存在用户配置文件里"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1022
+#: src/ui/Ui.cpp:1082
 msgid "Choose image…"
 msgstr "选择图片…"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1035
+#: src/ui/Ui.cpp:1095
 msgid "Reset to default"
 msgstr "恢复默认"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1042
+#: src/ui/Ui.cpp:1102
 msgid "Config file"
 msgstr "配置文件"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1069
+#: src/ui/Ui.cpp:1129
 msgid "Official here is a laptop render; we have no such asset yet."
 msgstr "官方这里是笔记本渲染图，我们还没有该素材。"
 
 # ── 子页切换按钮 ────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1077
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1260
+#: src/ui/Ui.cpp:1137 src/ui/Ui.cpp:1320
 msgid "Overview"
 msgstr "概况"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1086
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1155
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1205
+#: src/ui/Ui.cpp:1146 src/ui/Ui.cpp:1215 src/ui/Ui.cpp:1265
 msgid "CPU"
 msgstr "CPU"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1086
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1087
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1156
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1157
+#: src/ui/Ui.cpp:1146 src/ui/Ui.cpp:1147 src/ui/Ui.cpp:1216 src/ui/Ui.cpp:1217
 msgid "Utilization"
 msgstr "利用率"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1087
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1157
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1208
+#: src/ui/Ui.cpp:1147 src/ui/Ui.cpp:1217 src/ui/Ui.cpp:1268
 msgid "GPU"
 msgstr "GPU"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1088
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1159
+#: src/ui/Ui.cpp:1148 src/ui/Ui.cpp:1219
 msgid "Memory"
 msgstr "内存"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1088
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1159
+#: src/ui/Ui.cpp:1148 src/ui/Ui.cpp:1219
 msgid "Usage"
 msgstr "使用情况"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1089
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1161
+#: src/ui/Ui.cpp:1149 src/ui/Ui.cpp:1221
 msgid "C: disk"
 msgstr "C 盘"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1089
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1161
+#: src/ui/Ui.cpp:1149 src/ui/Ui.cpp:1221
 msgid "Free space"
 msgstr "磁盘空间"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1100
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1264
+#: src/ui/Ui.cpp:1160 src/ui/Ui.cpp:1324
 msgid "Thermal"
 msgstr "散热"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1109
+#: src/ui/Ui.cpp:1169
 msgid "Game library"
 msgstr "游戏库"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1113
+#: src/ui/Ui.cpp:1173
 msgid "New"
 msgstr "新游戏"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1113
+#: src/ui/Ui.cpp:1173
 msgid "Recent"
 msgstr "最近"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1113
+#: src/ui/Ui.cpp:1173
 msgid "Favorites"
 msgstr "收藏"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1113
+#: src/ui/Ui.cpp:1173
 msgid "Most played"
 msgstr "最常玩的游戏"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1124
+#: src/ui/Ui.cpp:1184
 msgid "No game scanning source on Linux yet."
 msgstr "Linux 上还没有游戏扫描来源。"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1138
+#: src/ui/Ui.cpp:1198
 msgid "Frequency (GHz)"
 msgstr "频率（GHz）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1138
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1140
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1201
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1203
+#: src/ui/Ui.cpp:1198 src/ui/Ui.cpp:1200 src/ui/Ui.cpp:1261 src/ui/Ui.cpp:1263
 msgid "Temperature"
 msgstr "温度"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1138
+#: src/ui/Ui.cpp:1198
 msgid "Power (W)"
 msgstr "电源（W）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1139
+#: src/ui/Ui.cpp:1199
 msgid "Voltage (V)"
 msgstr "电压（V）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1140
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1141
+#: src/ui/Ui.cpp:1200 src/ui/Ui.cpp:1201
 msgid "Frequency (MHz)"
 msgstr "频率（MHz）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1140
+#: src/ui/Ui.cpp:1200
 msgid "VRAM (MHz)"
 msgstr "VRAM（MHz）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1141
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1143
+#: src/ui/Ui.cpp:1201 src/ui/Ui.cpp:1203
 msgid "Available (GB)"
 msgstr "可用（GB）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1142
+#: src/ui/Ui.cpp:1202
 msgid "Unpaged (GB)"
 msgstr "未分页（GB）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1142
+#: src/ui/Ui.cpp:1202
 msgid "Cached (GB)"
 msgstr "已缓存（GB）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1143
+#: src/ui/Ui.cpp:1203
 msgid "Read (MB/s)"
 msgstr "读取速度（MB/s）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1143
+#: src/ui/Ui.cpp:1203
 msgid "Write (MB/s)"
 msgstr "写入速度（MB/s）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1144
+#: src/ui/Ui.cpp:1204
 msgid "Active time (%)"
 msgstr "活动时间（%）"
 
 # ── 子页切换按钮 ────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1155
+#: src/ui/Ui.cpp:1215
 msgid "CPU overview"
 msgstr "CPU 概况"
 
 # ── 子页切换按钮 ────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1157
+#: src/ui/Ui.cpp:1217
 msgid "GPU overview"
 msgstr "GPU 概况"
 
 # ── 子页切换按钮 ────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1159
+#: src/ui/Ui.cpp:1219
 msgid "Memory overview"
 msgstr "内存概况"
 
 # ── 子页切换按钮 ────────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1161
+#: src/ui/Ui.cpp:1221
 msgid "Disk overview"
 msgstr "C 盘概况"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1187
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1218
+#: src/ui/Ui.cpp:1247 src/ui/Ui.cpp:1278
 msgid "Values arrive with the M1 telemetry layer."
 msgstr "数据随 M1 遥测层一起接入。"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1197
+#: src/ui/Ui.cpp:1257
 msgid "Temperatures and fan speed"
 msgstr "温度与风扇转速"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1201
+#: src/ui/Ui.cpp:1261
 msgid "CPU area"
 msgstr "CPU 区域"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1203
+#: src/ui/Ui.cpp:1263
 msgid "GPU area"
 msgstr "GPU 区域"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1205
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1208
+#: src/ui/Ui.cpp:1265 src/ui/Ui.cpp:1268
 msgid "Fan speed"
 msgstr "风扇转速"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1227
+#: src/ui/Ui.cpp:1287
 msgid "Per-key editing"
 msgstr "逐键编辑"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1231
+#: src/ui/Ui.cpp:1291
 msgid "The keyboard layout view and per-key colors come later."
 msgstr "键盘布局视图与逐键配色稍后做。"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1246
+#: src/ui/Ui.cpp:1306
 msgid "Hotkeys"
 msgstr "热键"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1250
+#: src/ui/Ui.cpp:1310
 msgid ""
 "The daemon owns the G key / light key listener; showing and editing bindings "
 "needs EC support (unconfirmed)."
 msgstr "热键监听由守护进程负责；显示与编辑绑定需要 EC 支持（未确认）。"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1260
+#: src/ui/Ui.cpp:1320
 msgid "Performance · Overview"
 msgstr "性能 · 概况"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1261
+#: src/ui/Ui.cpp:1321
 msgid ""
 "CPU / memory / disk are readable (M1 telemetry); GPU is unavailable while "
 "the dGPU is runtime-suspended"
-msgstr "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
+msgstr ""
+"CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
 "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1264
+#: src/ui/Ui.cpp:1324
 msgid "Performance · Thermal"
 msgstr "性能 · 散热"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1265
+#: src/ui/Ui.cpp:1325
 msgid "CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"
 msgstr "CPU / GPU 温度与风扇转速可读（M1 遥测层）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1270
+#: src/ui/Ui.cpp:1330
 msgid "Lighting"
 msgstr "灯效"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1270
+#: src/ui/Ui.cpp:1330
 msgid "ALIENFX™ · Lighting"
 msgstr "ALIENFX™ · 灯效"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1271
+#: src/ui/Ui.cpp:1331
 msgid ""
 "The seven effects and brightness have working backends (wired up in M3); the "
 "color picker becomes GtkColorDialogButton"
 msgstr "7 种灯效与亮度是现成后端，M3 接入；颜色选择器改用 GtkColorDialogButton"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1274
+#: src/ui/Ui.cpp:1334
 msgid "Key bindings"
 msgstr "按键绑定"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1274
+#: src/ui/Ui.cpp:1334
 msgid "ALIENFX™ · Key bindings"
 msgstr "ALIENFX™ · 按键绑定"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1275
+#: src/ui/Ui.cpp:1335
 msgid ""
 "Can only listen to the G key / light key; remapping needs EC support "
 "(unconfirmed)"
 msgstr "只能监听 G 键 / 灯键，改键映射需 EC 支持（未确认）"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1281
+#: src/ui/Ui.cpp:1341
 msgid "About"
 msgstr "关于"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1281
+#: src/ui/Ui.cpp:1341
 msgid "Settings · About"
 msgstr "设置 · 关于"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1281
+#: src/ui/Ui.cpp:1341
 msgid "Version comes from the VERSION macro; doable"
 msgstr "版本取 VERSION 宏，可做"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1283
+#: src/ui/Ui.cpp:1343
 msgid "Appearance"
 msgstr "外观"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1283
+#: src/ui/Ui.cpp:1343
 msgid "Settings · Appearance"
 msgstr "设置 · 外观"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1284
+#: src/ui/Ui.cpp:1344
 msgid ""
 "Background can be pure black, follow the system, a custom color or an image"
 msgstr "背景可以是纯黑、跟随系统、自定义颜色或图片"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1286
+#: src/ui/Ui.cpp:1346
 msgid "Overlay"
 msgstr "覆盖"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1286
+#: src/ui/Ui.cpp:1346
 msgid "Settings · Overlay"
 msgstr "设置 · 覆盖"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1287
+#: src/ui/Ui.cpp:1347
 msgid "There is no in-game overlay on Linux → marked as not applicable"
 msgstr "Linux 没有游戏内叠加层 → 标记「不适用」"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1288
+#: src/ui/Ui.cpp:1348
 msgid "Onboarding"
 msgstr "新手入门"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1288
+#: src/ui/Ui.cpp:1348
 msgid "Settings · Onboarding"
 msgstr "设置 · 新手入门"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1289
+#: src/ui/Ui.cpp:1349
 msgid "Onboarding flow is undecided"
 msgstr "引导流程未定"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1290
+#: src/ui/Ui.cpp:1350
 msgid "Presets"
 msgstr "全局预设"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1290
+#: src/ui/Ui.cpp:1350
 msgid "Settings · Global presets"
 msgstr "设置 · 全局预设"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1291
+#: src/ui/Ui.cpp:1351
 msgid "Local preferences are doable; per-game switching has no game detection"
 msgstr "本地偏好可做；「按游戏自动切换」无游戏检测"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1293
+#: src/ui/Ui.cpp:1353
 msgid "Settings · Performance"
 msgstr "设置 · 性能"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1294
+#: src/ui/Ui.cpp:1354
 msgid ""
 "Overclocking is limited by the EC (capability unknown); Windows power saving "
 "is not applicable"
 msgstr "超频受 EC 限制（能力未知）；Windows 节能模式不适用"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1300
+#: src/ui/Ui.cpp:1360
 msgid "Home · Active"
 msgstr "主页 · 当前生效"
 
 # ── 每页「缺什么后端」的说明 ────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1301
+#: src/ui/Ui.cpp:1361
 msgid ""
 "Power modes, lighting and brightness have working backends; the four ring "
 "gauges wait for the M1 telemetry layer"
 msgstr "模式、灯效与亮度是现成后端；四个环形仪表要等 M1 遥测层"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1304
+#: src/ui/Ui.cpp:1364
 msgid "Overview and Thermal are sub-pages"
 msgstr "分概况与散热两个子页"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1306
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:82
+#: src/ui/Ui.cpp:1366 src/ui/awcc.ui:82
 msgid "ALIENFX™"
 msgstr "ALIENFX™"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1306
+#: src/ui/Ui.cpp:1366
 msgid "Lighting and Key bindings are sub-pages"
 msgstr "分灯效与按键绑定两个子页"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1308
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:90
+#: src/ui/Ui.cpp:1368 src/ui/awcc.ui:90
 msgid "Macros"
 msgstr "宏"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1308
+#: src/ui/Ui.cpp:1368
 msgid "Not present upstream, so no backend exists"
 msgstr "上游没有这个功能，后端不存在"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1310
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:98
+#: src/ui/Ui.cpp:1370 src/ui/awcc.ui:98
 msgid "Library"
 msgstr "库"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1311
+#: src/ui/Ui.cpp:1371
 msgid "No game scanning source on Linux; manual add or placeholder"
 msgstr "Linux 上无游戏扫描来源，只能手动添加或占位"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1312
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:112
+#: src/ui/Ui.cpp:1372 src/ui/awcc.ui:112
 msgid "Settings"
 msgstr "设置"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1312
+#: src/ui/Ui.cpp:1372
 msgid "Six sub-pages, per item in M4"
 msgstr "六个子页，逐项见 M4"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1314
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:120
+#: src/ui/Ui.cpp:1374 src/ui/awcc.ui:120
 msgid "Help"
 msgstr "帮助"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1314
+#: src/ui/Ui.cpp:1374
 msgid "Content and links are undecided"
 msgstr "内容与链接待定"
 
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/Ui.cpp⁩:1321
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:44
+#: src/ui/Ui.cpp:1381 src/ui/awcc.ui:44
 msgid "System"
 msgstr "系统"
 
 # ── 导航与页面标题 ──────────────────────────────────────────────────────────
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:28
-#: ⁨/home/felix/项目/AWCC G16 7630 Linux/src/ui/awcc.ui⁩:66
+#: src/ui/awcc.ui:28 src/ui/awcc.ui:66
 msgid "Home"
 msgstr "主页"
 

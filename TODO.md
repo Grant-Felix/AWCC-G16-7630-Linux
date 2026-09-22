@@ -148,7 +148,7 @@ M0.1–M0.4 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui`
 ## 四、每步都要跑的验证命令（复制即用）
 
 ```bash
-cd "/home/felix/项目/AWCC G16 7630 Linux"
+cd "$(git rev-parse --show-toplevel)"   # 仓库根
 
 # 1) 依赖与构建
 pkg-config --exists gtk4 libadwaita-1 && echo "GTK4 依赖 ok"
