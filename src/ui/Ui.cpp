@@ -84,6 +84,8 @@ struct AppContext {
     // 图标缩放
     // 用 deque 而不是 vector：buildModeCard 里会再 addIconGroup，vector 扩容会让先取的引用悬空
     std::deque<IconGroup> iconGroups;
+    // 宽度按内容区比例走的卡片（官方版式：如主页底部「仪表卡 2/3 + 游戏库卡 1/3」）
+    std::vector<std::pair<GtkWidget *, double>> widthRatios;
     int observedWidth = 0;
     int observedHeight = 0;
     // 界面状态
@@ -128,6 +130,16 @@ void applyIconScale(AppContext &ctx, int width, int height) {
     if ((ctx.selftest || !ctx.snapshotPath.empty()) && !ctx.selftestReported) {
         ctx.selftestReported = true;
         g_timeout_add(200, finishFirstFrame, &ctx);
+    }
+    // 比例宽度的可用宽度 = 窗口宽 - 左栏(48) - 页面左右边距(16+16) - 卡片间距(12)；
+    // 不扣这些的话算出来的卡片会比可用空间宽，把窗口越撑越大（实测被撑到 1405）。
+    constexpr int kChromeWidth = 48 + 16 + 16 + 12;
+    const int usable = width - kChromeWidth;
+    for (auto &[widget, ratio] : ctx.widthRatios) {
+        const int wanted = static_cast<int>(std::lround(usable * ratio));
+        if (wanted > 0 && usable > 0) {
+            gtk_widget_set_size_request(widget, wanted, -1);
+        }
     }
     for (IconGroup &group : ctx.iconGroups) {
         const int px = iconPxFor(base, group);
@@ -681,11 +693,15 @@ GtkWidget *makePlaceholderPage(const char *title, const char *note) {
 // ── 环形仪表（官方版式）──────────────────────────────────────────────────
 // 灰轨道 + 从 12 点顺时针的红色弧 + 中间大号白字 + 单位，仪表下方是红色名称与灰色说明。
 // 数据还没接（M1 遥测层）时 value < 0：只画灰轨道、中间显示「—」，绝不画成 0 骗人。
-constexpr double kGaugeStroke = 6.0;
+constexpr double kGaugeStroke = 8.0;  // 量自官方截图：描边 ≈8 逻辑像素
+constexpr int kGaugeSize = 130;       // 量自官方截图：外径 ≈130 逻辑像素
+
+enum class GaugeStyle { Smooth, Jagged }; // 锯齿环用于风扇转速（官方散热页）
 
 struct GaugeData {
     double fraction = 0.0; // 0..1，未知时忽略
     bool unknown = true;
+    GaugeStyle style = GaugeStyle::Smooth;
 };
 
 void drawGauge(GtkDrawingArea *area, cairo_t *cr, int width, int height,
@@ -700,23 +716,45 @@ void drawGauge(GtkDrawingArea *area, cairo_t *cr, int width, int height,
     cairo_set_line_width(cr, kGaugeStroke);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
 
+    const bool filled = !gauge->unknown && gauge->fraction > 0.0;
+    const double redEnd = start + full * gauge->fraction;
+
+    if (gauge->style == GaugeStyle::Jagged) {
+        // 锯齿环：沿圆周排一圈小径向刻度（官方风扇转速那种）
+        constexpr int kTicks = 56;
+        for (int i = 0; i < kTicks; ++i) {
+            const double a = start + full * (static_cast<double>(i) / kTicks);
+            const bool lit = filled && a <= redEnd;
+            cairo_set_source_rgb(cr, lit ? 0xfd / 255.0 : 0x3a / 255.0,
+                                 lit ? 0x56 / 255.0 : 0x3f / 255.0,
+                                 lit ? 0x43 / 255.0 : 0x47 / 255.0);
+            const double inner = radius - kGaugeStroke * 1.4;
+            cairo_move_to(cr, cx + std::cos(a) * inner, cy + std::sin(a) * inner);
+            cairo_line_to(cr, cx + std::cos(a) * (radius + kGaugeStroke / 2),
+                          cy + std::sin(a) * (radius + kGaugeStroke / 2));
+            cairo_stroke(cr);
+        }
+        return;
+    }
+
     cairo_set_source_rgb(cr, 0x3a / 255.0, 0x3f / 255.0, 0x47 / 255.0);
     cairo_arc(cr, cx, cy, radius, start, start + full);
     cairo_stroke(cr);
 
-    if (!gauge->unknown && gauge->fraction > 0.0) {
+    if (filled) {
         cairo_set_source_rgb(cr, 0xfd / 255.0, 0x56 / 255.0, 0x43 / 255.0);
-        cairo_arc(cr, cx, cy, radius, start, start + full * gauge->fraction);
+        cairo_arc(cr, cx, cy, radius, start, redEnd);
         cairo_stroke(cr);
     }
 }
 
 GtkWidget *makeGauge(double fraction, bool unknown, const char *valueText,
-                     const char *unit, const char *label, const char *sublabel) {
-    auto *gauge = new GaugeData{fraction, unknown};
+                     const char *unit, const char *label, const char *sublabel,
+                     GaugeStyle style = GaugeStyle::Smooth) {
+    auto *gauge = new GaugeData{fraction, unknown, style};
 
     GtkWidget *area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(area, 150, 150);
+    gtk_widget_set_size_request(area, kGaugeSize, kGaugeSize);
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(area), drawGauge, gauge,
                                    [](gpointer data) { delete static_cast<GaugeData *>(data); });
 
@@ -782,58 +820,6 @@ GtkWidget *makeColumnHeader(const char *iconName, const char *title) {
     GtkWidget *label = makeLabel(_(title), "column-title");
     gtk_box_append(GTK_BOX(header), label);
     return header;
-}
-
-GtkWidget *buildOverviewPage(AppContext &ctx) {
-    GtkWidget *content = makePageContent();
-    gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
-
-    const char *cpuRows[] = {N_("Frequency (GHz)"), N_("Temperature"), N_("Power (W)"),
-                             N_("Voltage (V)")};
-    const char *gpuRows[] = {N_("Frequency (MHz)"), N_("Temperature"), N_("VRAM (MHz)")};
-    const char *memRows[] = {N_("Available (GB)"), N_("Frequency (MHz)"),
-                             N_("Unpaged (GB)"), N_("Cached (GB)")};
-    const char *diskRows[] = {N_("Available (GB)"), N_("Read (MB/s)"), N_("Write (MB/s)"),
-                              N_("Active time (%)")};
-
-    GtkWidget *columns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
-    gtk_widget_set_halign(columns, GTK_ALIGN_CENTER);
-    struct Column {
-        const char *icon;
-        const char *title;
-        const char *gaugeLabel;
-        const char *gaugeSub;
-        const char *const *rows;
-        size_t rowCount;
-    };
-    const Column specs[] = {
-        {"utilities-system-monitor-symbolic", N_("CPU overview"), N_("CPU"),
-         N_("Utilization"), cpuRows, std::size(cpuRows)},
-        {"video-display-symbolic", N_("GPU overview"), N_("GPU"), N_("Utilization"), gpuRows,
-         std::size(gpuRows)},
-        {"media-flash-symbolic", N_("Memory overview"), N_("Memory"), N_("Usage"), memRows,
-         std::size(memRows)},
-        {"drive-harddisk-symbolic", N_("Disk overview"), N_("C: disk"), N_("Free space"),
-         diskRows, std::size(diskRows)},
-    };
-    for (const Column &spec : specs) {
-        GtkWidget *column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-        gtk_box_append(GTK_BOX(column), makeColumnHeader(spec.icon, spec.title));
-        gtk_box_append(GTK_BOX(column),
-                       makeGauge(0.0, true, "—", "%", spec.gaugeLabel, spec.gaugeSub));
-        gtk_box_append(GTK_BOX(column), makeParamTable(spec.rows, spec.rowCount));
-        gtk_box_append(GTK_BOX(columns), column);
-    }
-    gtk_box_append(GTK_BOX(content), columns);
-
-    GtkWidget *note = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_halign(note, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(note),
-                   makeBadge(N_("Under construction"), "badge-construction"));
-    gtk_box_append(GTK_BOX(note),
-                   makeLabel(N_("Values arrive with the M1 telemetry layer."), "card-note"));
-    gtk_box_append(GTK_BOX(content), note);
-    return wrapScrolled(content);
 }
 
 // ── 背景（默认纯黑 / 跟随亮暗 / 自定义颜色 / 图片 / 官方辉光）──────────────
@@ -1066,31 +1052,175 @@ GtkWidget *buildAppearancePage(AppContext &ctx) {
     return wrapScrolled(content);
 }
 
-// 主页：模式 + 灯效 + 风扇（都是既有后端）；环形仪表还没接（M1 遥测层）
-GtkWidget *buildHome(AppContext &ctx) {
+// ── 官方版式：主页 / 性能·概况 / 性能·散热 ────────────────────────────────
+// 构成读自官方截图（ADAPTATION.md 第九节），尺寸见 DESIGN.md 第三节。
+
+// 主页（官方 _3_9）：模式行 → 整宽机身图大卡 → 底部一行两卡：
+// 左 2/3 四个环形仪表（含「性能 / 散热」切换），右 1/3 游戏库卡。
+GtkWidget *buildHomePage(AppContext &ctx) {
     GtkWidget *content = makePageContent();
-
-    if (!ctx.daemonRunning) {
-        GtkWidget *strip = gtk_label_new(
-            _("Daemon is not running: thermal and fan changes fall back to pkexec and will "
-              "ask for authorization."));
-        gtk_widget_add_css_class(strip, "warn-strip");
-        gtk_label_set_wrap(GTK_LABEL(strip), TRUE);
-        gtk_widget_set_halign(strip, GTK_ALIGN_FILL);
-        gtk_box_append(GTK_BOX(content), strip);
-    }
-
     gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
-    gtk_box_append(GTK_BOX(content), buildLightingCard(ctx, false));
-    gtk_box_append(GTK_BOX(content), buildFanCard(ctx));
 
-    GtkWidget *gauges = makeCard(N_("Ring gauges"), nullptr);
-    gtk_box_append(GTK_BOX(gauges),
+    GtkWidget *hero = makeCard(N_("Device"), nullptr);
+    gtk_widget_set_size_request(hero, -1, 230);
+    GtkWidget *heroInner = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_valign(heroInner, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(heroInner, GTK_ALIGN_CENTER);
+    gtk_widget_set_vexpand(heroInner, true);
+    gtk_box_append(GTK_BOX(heroInner),
                    makeBadge(N_("Under construction"), "badge-construction"));
-    gtk_box_append(GTK_BOX(gauges),
-                   makeLabel(N_("Needs the M1 telemetry layer (CPU / memory / disk / GPU)."),
+    gtk_box_append(GTK_BOX(heroInner),
+                   makeLabel(N_("Official here is a laptop render; we have no such asset yet."),
                              "card-note"));
-    gtk_box_append(GTK_BOX(content), gauges);
+    gtk_box_append(GTK_BOX(hero), heroInner);
+    gtk_box_append(GTK_BOX(content), hero);
+
+    GtkWidget *bottom = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+
+    // 左：四个环形仪表（数据待 M1 遥测层，先画成「—」）
+    GtkWidget *gauges = makeCard(N_("Overview"), nullptr);
+    GtkWidget *gaugeRow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(gaugeRow, GTK_ALIGN_CENTER);
+    struct MiniGauge {
+        const char *label;
+        const char *sub;
+        const char *unit;
+    };
+    const MiniGauge minis[] = {
+        {N_("CPU"), N_("Utilization"), "%"},
+        {N_("GPU"), N_("Utilization"), "%"},
+        {N_("Memory"), N_("Usage"), "GB"},
+        {N_("C: disk"), N_("Free space"), "GB"},
+    };
+    for (const MiniGauge &mini : minis) {
+        gtk_box_append(GTK_BOX(gaugeRow),
+                       makeGauge(0.0, true, "—", mini.unit, mini.label, mini.sub));
+    }
+    gtk_box_append(GTK_BOX(gauges), gaugeRow);
+    // 官方左下角是「性能 / 散热」分段切换
+    GtkWidget *perfToggle = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(perfToggle, GTK_ALIGN_CENTER);
+    gtk_widget_add_css_class(perfToggle, "subnav");
+    for (const char *label : {N_("Performance"), N_("Thermal")}) {
+        GtkWidget *btn = gtk_toggle_button_new_with_label(_(label));
+        gtk_box_append(GTK_BOX(perfToggle), btn);
+    }
+    gtk_box_append(GTK_BOX(gauges), perfToggle);
+    gtk_box_append(GTK_BOX(bottom), gauges);
+    ctx.widthRatios.emplace_back(gauges, 0.66);
+
+    // 右：游戏库（官方有「新游戏 / 最近 / 收藏 / 最常玩的游戏」标签页；Linux 无扫描来源）
+    GtkWidget *library = makeCard(N_("Game library"), nullptr);
+    GtkWidget *tabs = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+    gtk_widget_set_halign(tabs, GTK_ALIGN_CENTER);
+    for (const char *label :
+         {N_("New"), N_("Recent"), N_("Favorites"), N_("Most played")}) {
+        gtk_box_append(GTK_BOX(tabs), makeLabel(label, "card-note"));
+    }
+    gtk_box_append(GTK_BOX(library), tabs);
+    GtkWidget *libInner = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_valign(libInner, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(libInner, GTK_ALIGN_CENTER);
+    gtk_widget_set_vexpand(libInner, true);
+    gtk_box_append(GTK_BOX(libInner),
+                   makeBadge(N_("Under construction"), "badge-construction"));
+    gtk_box_append(GTK_BOX(libInner),
+                   makeLabel(N_("No game scanning source on Linux yet."), "card-note"));
+    gtk_box_append(GTK_BOX(library), libInner);
+    gtk_box_append(GTK_BOX(bottom), library);
+    ctx.widthRatios.emplace_back(library, 0.33);
+
+    gtk_box_append(GTK_BOX(content), bottom);
+    return wrapScrolled(content);
+}
+
+// 性能 · 概况（官方 _4_9）：模式行 → 整宽卡内四等列（小图标＋灰标题 / 环形表 / 参数表）。
+GtkWidget *buildOverviewPage(AppContext &ctx) {
+    GtkWidget *content = makePageContent();
+    gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
+
+    const char *cpuRows[] = {N_("Frequency (GHz)"), N_("Temperature"), N_("Power (W)"),
+                             N_("Voltage (V)")};
+    const char *gpuRows[] = {N_("Frequency (MHz)"), N_("Temperature"), N_("VRAM (MHz)")};
+    const char *memRows[] = {N_("Available (GB)"), N_("Frequency (MHz)"),
+                             N_("Unpaged (GB)"), N_("Cached (GB)")};
+    const char *diskRows[] = {N_("Available (GB)"), N_("Read (MB/s)"), N_("Write (MB/s)"),
+                              N_("Active time (%)")};
+    struct Column {
+        const char *icon;
+        const char *title;
+        const char *gaugeLabel;
+        const char *gaugeSub;
+        const char *unit;
+        const char *const *rows;
+        size_t rowCount;
+    };
+    const Column columns[] = {
+        {"utilities-system-monitor-symbolic", N_("CPU overview"), N_("CPU"),
+         N_("Utilization"), "%", cpuRows, std::size(cpuRows)},
+        {"video-display-symbolic", N_("GPU overview"), N_("GPU"), N_("Utilization"), "%",
+         gpuRows, std::size(gpuRows)},
+        {"media-flash-symbolic", N_("Memory overview"), N_("Memory"), N_("Usage"), "GB",
+         memRows, std::size(memRows)},
+        {"drive-harddisk-symbolic", N_("Disk overview"), N_("C: disk"), N_("Free space"),
+         "GB", diskRows, std::size(diskRows)},
+    };
+
+    // 官方式样：四列同处一张卡内，列间距 32（量自截图）
+    GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_add_css_class(card, "card");
+    GtkWidget *grid = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 32);
+    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+    for (const Column &spec : columns) {
+        GtkWidget *column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+        gtk_widget_set_halign(column, GTK_ALIGN_CENTER);
+        gtk_box_append(GTK_BOX(column), makeColumnHeader(spec.icon, spec.title));
+        gtk_box_append(GTK_BOX(column),
+                       makeGauge(0.0, true, "—", spec.unit, spec.gaugeLabel, spec.gaugeSub));
+        gtk_box_append(GTK_BOX(column), makeParamTable(spec.rows, spec.rowCount));
+        gtk_box_append(GTK_BOX(grid), column);
+    }
+    gtk_box_append(GTK_BOX(card), grid);
+    gtk_box_append(GTK_BOX(content), card);
+
+    GtkWidget *note = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(note, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(note),
+                   makeBadge(N_("Under construction"), "badge-construction"));
+    gtk_box_append(GTK_BOX(note),
+                   makeLabel(N_("Values arrive with the M1 telemetry layer."), "card-note"));
+    gtk_box_append(GTK_BOX(content), note);
+    return wrapScrolled(content);
+}
+
+// 性能 · 散热（官方 _6_9）：模式行 → 卡内 2 个温度环 + 2 个风扇转速锯齿环。
+GtkWidget *buildThermalPage(AppContext &ctx) {
+    GtkWidget *content = makePageContent();
+    gtk_box_append(GTK_BOX(content), buildModeRow(ctx));
+
+    GtkWidget *card = makeCard(N_("Temperatures and fan speed"), nullptr);
+    GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 40);
+    gtk_widget_set_halign(row, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(row),
+                   makeGauge(0.0, true, "—", "°C", N_("CPU area"), N_("Temperature")));
+    gtk_box_append(GTK_BOX(row),
+                   makeGauge(0.0, true, "—", "°C", N_("GPU area"), N_("Temperature")));
+    gtk_box_append(GTK_BOX(row),
+                   makeGauge(0.0, true, "—", "%", N_("CPU"), N_("Fan speed"),
+                             GaugeStyle::Jagged));
+    gtk_box_append(GTK_BOX(row),
+                   makeGauge(0.0, true, "—", "%", N_("GPU"), N_("Fan speed"),
+                             GaugeStyle::Jagged));
+    gtk_box_append(GTK_BOX(card), row);
+    gtk_box_append(GTK_BOX(content), card);
+
+    GtkWidget *note = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(note, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(note),
+                   makeBadge(N_("Under construction"), "badge-construction"));
+    gtk_box_append(GTK_BOX(note),
+                   makeLabel(N_("Values arrive with the M1 telemetry layer."), "card-note"));
+    gtk_box_append(GTK_BOX(content), note);
     return wrapScrolled(content);
 }
 
@@ -1136,7 +1266,8 @@ const SubPage kPerformanceSubs[] = {
         "dGPU is runtime-suspended"),
      buildOverviewPage},
     {"thermal", N_("Thermal"), N_("Performance · Thermal"),
-     N_("CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"), nullptr},
+     N_("CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"),
+     buildThermalPage},
 };
 
 const SubPage kAlienfxSubs[] = {
@@ -1173,7 +1304,7 @@ const NavEntry kNav[] = {
     {"home", N_("Home · Active"),
      N_("Power modes, lighting and brightness have working backends; the four ring "
         "gauges wait for the M1 telemetry layer"),
-     nullptr, 0, buildHome},
+     nullptr, 0, buildHomePage},
     {"performance", N_("Performance"), N_("Overview and Thermal are sub-pages"),
      kPerformanceSubs, std::size(kPerformanceSubs), nullptr},
     {"alienfx", N_("ALIENFX™"), N_("Lighting and Key bindings are sub-pages"), kAlienfxSubs,
