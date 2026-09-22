@@ -4,7 +4,7 @@
 # 注意版本号映射：Arch 的 pkgver 不允许含连字符，所以上游的 "26.9.22-2" 在这里写成
 # "26.9.22_2"。发布新版时两处都要改：pkgver 与下面 source 里的标签。
 pkgname=awcc-g16-7630-linux
-pkgver=26.9.22_2
+pkgver=26.9.22_3
 pkgrel=1
 pkgdesc="Alienware Command Center for Dell G16 7630 (GTK4 frontend)"
 arch=('x86_64')
@@ -18,7 +18,7 @@ provides=('awcc')
 conflicts=('awcc' 'awcc-bin')
 # 上游 tag 是 v26.9.22-2，pkgver 里用下划线，这里再换回连字符
 source=("$pkgname-$pkgver.tar.gz::https://github.com/Grant-Felix/AWCC-G16-7630-Linux/archive/refs/tags/v${pkgver/_/-}.tar.gz")
-sha256sums=('90515f47190138f9b8312a285a15352b8046898d73e8fb0f5a0db5a337c800e8')
+sha256sums=('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
 
 build() {
   local srcdir_name="AWCC-G16-7630-Linux-${pkgver/_/-}"
