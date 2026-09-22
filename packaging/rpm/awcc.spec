@@ -1,11 +1,11 @@
 # RPM 官方打包方案：用 rpmbuild 构建（scripts/package.sh 会在 fedora 容器里跑）。
 #
-# 版本号遵循上游的日期式版本，但 RPM 的 Version 不允许含连字符，所以 v26.9.22-2 拆成
-# Version=26.9.22 + Release=2。Release 里**不加 %{?dist}**，好让产物名与 tag 同串
-# （AWCC-v26.9.22-2；见 ADAPTATION.md 第六节的版本号规则）。
+# 版本号遵循上游的日期式版本，但 RPM 的 Version 不允许含连字符，所以 v26.9.22-3 拆成
+# Version=26.9.22 + Release=3。Release 里不追加发行版标识串，好让产物名与 tag 同串
+# （见 ADAPTATION.md 第六节的版本号规则）。
 Name:           awcc
 Version:        26.9.22
-Release:        2
+Release:        3
 Summary:        Alienware Command Center for Dell G16 7630 (GTK4 frontend)
 License:        GPL-3.0-only
 URL:            https://github.com/Grant-Felix/AWCC-G16-7630-Linux
@@ -34,8 +34,8 @@ Only validated on the Dell G16 7630; other models are not supported.
 %autosetup -n AWCC-G16-7630-Linux-%{version}-%{release}
 
 %build
-# 不要自己写 -B build：%cmake_build 用的是 %{_vpath_builddir}（redhat-linux-build），
-# 两者不一致会报 "redhat-linux-build is not a directory"（实测踩到）。
+# 不要自己写 -B <目录>：%cmake_build 用的是红帽宏的构建目录，两者不一致会报
+# "redhat-linux-build is not a directory"（实测踩到）。
 %cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DAWCC_VERSION=%{version}-%{release}
 %cmake_build
 
@@ -54,7 +54,7 @@ DESTDIR=%{buildroot} cmake --install %{_vpath_builddir} --component awcc
 %config(noreplace) /etc/systemd/system/awccd.service
 
 %changelog
-* Tue Sep 22 2026 Felix <noreply@example.com> - 26.9.22-2
+* Tue Sep 22 2026 Felix <noreply@example.com> - 26.9.22-3
 - GTK4 frontend replacing the upstream ImGui UI
 - Official AWCC layout and colours sampled from the reference screenshots
 - Automatic zh_CN / English switching (gettext)

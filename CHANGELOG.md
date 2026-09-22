@@ -1,5 +1,18 @@
 # Changelog
 
+## v26.9.22-3 (2026-09-22)
+
+同日第 3 次打包。相对 `v26.9.22-2` 的差别**只在打包**：v26.9.22-2 的源码归档里 install 规则
+还没有 `COMPONENT awcc` 标记，导致 Arch / RPM 包用 `--component awcc` 安装时一个文件都装不进去
+（deb 不受影响，因为它直接用工作区源码）。这个 tag 起，三个发行版的包都能正确构建。
+
+- Debian / Fedora 的包改由 **Forgejo Actions** 构建（`.forgejo/workflows/package.yml`）：
+  作业分别跑在 `debian:trixie` / `fedora` / `archlinux` 官方容器里，构建完自动挂到本 tag 的
+  Release 上（`scripts/attach-package.sh`）
+- 本机 Forgejo 部署新增 runner（v13.2.0）+ `workdir_parent` 与网络配置
+- RPM spec 修两处：不再自己写 `-B <目录>`（红帽宏用的是它自己的构建目录）、注释里不再出现
+  会被 rpm 展开的宏
+
 ## v26.9.22-2 (2026-09-22)
 
 本 fork 的版本号是日期式（见 `ADAPTATION.md` 第六节）：`v26.9.22-2` = 2026-09-22 当天第 2 次打包。
