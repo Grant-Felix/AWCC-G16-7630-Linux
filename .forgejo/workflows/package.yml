@@ -94,7 +94,10 @@ jobs:
       image: archlinux:latest
     steps:
       - name: 先装 node 与 git（checkout 的前提）
-        run: pacman -Sy --noconfirm --needed ca-certificates nodejs git curl
+        run: |
+          # 国内直连默认镜像常超时（实测 "Operation too slow"），换 bfsu
+          echo 'Server = https://mirrors.bfsu.edu.cn/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+          pacman -Sy --noconfirm --needed ca-certificates nodejs git curl
       - uses: actions/checkout@v4
       - name: 构建 Arch 包并挂到 Release
         env:
@@ -105,6 +108,7 @@ jobs:
           # nodejs 同上：actions/checkout 是 Node 动作
           # gtk4 / libadwaita 必须装：PKGBUILD 的 depends 在 --nodeps 下不会自动装，
           # 缺了 CMake 的 pkg_check_modules(GTK4 REQUIRED) 直接失败（实测）
+          echo 'Server = https://mirrors.bfsu.edu.cn/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
           pacman -Sy --noconfirm --needed base-devel cmake ninja meson sudo gtk4 libadwaita
           # makepkg 不允许以 root 运行；仓库里 PKGBUILD 的 pkgver 是 26.9.22_2 这种下划线写法
           useradd -m builder

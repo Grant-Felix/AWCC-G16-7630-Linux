@@ -1,4 +1,4 @@
-awcc (26.9.22-2) unstable; urgency=medium
+awcc (26.9.22-3) unstable; urgency=medium
 
   * GTK4 frontend replacing the upstream ImGui UI
   * Official AWCC layout and colours sampled from the reference screenshots
@@ -6,5 +6,7 @@ awcc (26.9.22-2) unstable; urgency=medium
   * Configurable background (pure black / follow system / colour / image)
   * Icon scaling follows the window size; rail icons ink-compensated
   * Date-based versioning: v<YY>.<M>.<D>-<n>
+  * Packages now built by Forgejo Actions from this tag; the previous tag's source
+    archive lacked the COMPONENT markers the package installs filter on
 
- -- Felix <noreply@example.com>  Mon, 22 Sep 2026 14:00:00 +0800
+ -- Felix <noreply@example.com>  Mon, 22 Sep 2026 16:00:00 +0800

@@ -34,8 +34,10 @@ Only validated on the Dell G16 7630; other models are not supported.
 %autosetup -n AWCC-G16-7630-Linux-%{version}-%{release}
 
 %build
-# 不要自己写 -B <目录>：%cmake_build 用的是红帽宏的构建目录，两者不一致会报
-# "redhat-linux-build is not a directory"（实测踩到）。
+# 注意：这里不要自己写 -B <目录>。红帽的 cmake 构建宏用的是它自己的构建目录，
+# 两者不一致会报 "redhat-linux-build is not a directory"（实测踩到）。
+# 另外 spec 的注释里绝不能出现百分号开头的宏名——rpm 连注释里的宏都会展开，
+# 而该宏的展开含换行，会把注释撑破、把后半行变成额外命令行参数（实测踩到）。
 %cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DAWCC_VERSION=%{version}-%{release}
 %cmake_build
 
