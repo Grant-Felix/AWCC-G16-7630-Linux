@@ -75,10 +75,11 @@ sudo install -Dm755 build/awcc /usr/local/bin/awcc
 
 ## 六、版本号与打包
 
-本 fork 的版本号用**发布日期式**：`v<YY>.<M>.<D>-<x>`，`x` 是当天第几次打包。例如 `v26.9.22-1`
-是 2026-09-22 当天第 1 次打包，同日第 2 次是 `v26.9.22-2`。**年月日不补零**——`26.09.22-1` 里的
-前导零会让它不再是合法 semver（npm 与 Cargo 都拒）；也不写四段式。标签、`VERSION` 宏、
-发布标题与产物文件名用同一串，产物为 `AWCC-v26.9.22-1.tar.gz`。
+本 fork 的版本号用**发布日期式**：`v<YY>.<M>.<D>-<x>`，`x` 是当天第几次打包，**从 1 起算、
+不设上限**（当天第 101 次打包就是 `-101`，不封顶也不回绕），跨天重新从 1 起算。例如
+`v26.9.22-1` 是 2026-09-22 当天第 1 次打包，同日第 2 次是 `v26.9.22-2`。**年月日不补零**——
+`26.09.22-1` 里的前导零会让它不再是合法 semver（npm 与 Cargo 都拒）；也不写四段式。标签、
+`VERSION` 宏、发布标题与产物文件名用同一串，产物为 `AWCC-v26.9.22-1.tar.gz`。
 
 上游用 release-please 产 semver（`v1.19.0` 那批），与本方案冲突，故本 fork 不启用它：
 `.github/workflows/release.yml`、`release-please-config.json` 与 `.release-please-manifest.json`
