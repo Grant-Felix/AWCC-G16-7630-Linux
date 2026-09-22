@@ -357,7 +357,8 @@ int main(int argc, char *argv[]) {
         }
 
         LOG_S(INFO) << "Rendering UI";
-        const Ui::Services services{&awccthermals, &acpiUtils, &effects};
+        const Ui::Services services{&awccthermals, &acpiUtils, &effects,
+                                    daemon.isDaemonRunning()};
         return Ui::Run(argc, argv, services);
     }
     if (awcc::shouldRunDaemon(args)) {

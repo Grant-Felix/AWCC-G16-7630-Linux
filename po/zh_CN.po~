@@ -1,0 +1,170 @@
+# AWCC-G16-7630-Linux 前端的中文翻译。
+#
+# 源串是英文：src/ui/Ui.cpp 里 _() 包起来的串，以及 src/ui/awcc.ui 里 translatable="yes" 的串。
+# gettext 查不到翻译时回落到 msgid（英文），所以中文环境显示下面这些译文、其他环境显示英文。
+# 改串之后用 `ninja -C build pot` 重新生成 po/awcc.pot，再 msgmerge 到本文件。
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: awcc\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-22 13:10+0800\n"
+"PO-Revision-Date: 2026-09-22 13:10+0800\n"
+"Last-Translator: Felix\n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# ── 导航与页面标题 ──────────────────────────────────────────────────────────
+msgid "Home"
+msgstr "主页"
+
+msgid "Home · Active"
+msgstr "主页 · 当前生效"
+
+msgid "Performance"
+msgstr "性能"
+
+msgid "Performance · Overview"
+msgstr "性能 · 概况"
+
+msgid "Performance · Thermal"
+msgstr "性能 · 散热"
+
+msgid "ALIENFX™"
+msgstr "ALIENFX™"
+
+msgid "ALIENFX™ · Lighting"
+msgstr "ALIENFX™ · 灯效"
+
+msgid "ALIENFX™ · Key bindings"
+msgstr "ALIENFX™ · 按键绑定"
+
+msgid "Macros"
+msgstr "宏"
+
+msgid "Library"
+msgstr "库"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Settings · About"
+msgstr "设置 · 关于"
+
+msgid "Settings · Appearance"
+msgstr "设置 · 外观"
+
+msgid "Settings · Overlay"
+msgstr "设置 · 覆盖"
+
+msgid "Settings · Onboarding"
+msgstr "设置 · 新手入门"
+
+msgid "Settings · Global presets"
+msgstr "设置 · 全局预设"
+
+msgid "Settings · Performance"
+msgstr "设置 · 性能"
+
+msgid "Help"
+msgstr "帮助"
+
+msgid "System"
+msgstr "系统"
+
+# ── 子页切换按钮 ────────────────────────────────────────────────────────────
+msgid "Overview"
+msgstr "概况"
+
+msgid "Thermal"
+msgstr "散热"
+
+msgid "Lighting"
+msgstr "灯效"
+
+msgid "Key bindings"
+msgstr "按键绑定"
+
+msgid "About"
+msgstr "关于"
+
+msgid "Appearance"
+msgstr "外观"
+
+msgid "Overlay"
+msgstr "覆盖"
+
+msgid "Onboarding"
+msgstr "新手入门"
+
+msgid "Presets"
+msgstr "全局预设"
+
+# ── 状态徽标 ────────────────────────────────────────────────────────────────
+msgid "Under construction"
+msgstr "施工中"
+
+# ── 每页「缺什么后端」的说明 ────────────────────────────────────────────────
+msgid ""
+"Power modes, lighting and brightness have working backends; the four ring gauges "
+"wait for the M1 telemetry layer"
+msgstr "模式、灯效与亮度是现成后端；四个环形仪表要等 M1 遥测层"
+
+msgid "Overview and Thermal are sub-pages"
+msgstr "分概况与散热两个子页"
+
+msgid "Lighting and Key bindings are sub-pages"
+msgstr "分灯效与按键绑定两个子页"
+
+msgid "Not present upstream, so no backend exists"
+msgstr "上游没有这个功能，后端不存在"
+
+msgid "No game scanning source on Linux; manual add or placeholder"
+msgstr "Linux 上无游戏扫描来源，只能手动添加或占位"
+
+msgid "Six sub-pages, per item in M4"
+msgstr "六个子页，逐项见 M4"
+
+msgid "Content and links are undecided"
+msgstr "内容与链接待定"
+
+msgid ""
+"CPU / memory / disk are readable (M1 telemetry); GPU is unavailable while the dGPU "
+"is runtime-suspended"
+msgstr "CPU / 内存 / 磁盘可读（M1 遥测层）；GPU 因 dGPU 处于 runtime suspend 暂不可用"
+
+msgid "CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"
+msgstr "CPU / GPU 温度与风扇转速可读（M1 遥测层）"
+
+msgid ""
+"The seven effects and brightness have working backends (wired up in M3); the color "
+"picker becomes GtkColorDialogButton"
+msgstr "7 种灯效与亮度是现成后端，M3 接入；颜色选择器改用 GtkColorDialogButton"
+
+msgid ""
+"Can only listen to the G key / light key; remapping needs EC support (unconfirmed)"
+msgstr "只能监听 G 键 / 灯键，改键映射需 EC 支持（未确认）"
+
+msgid "Version comes from the VERSION macro; doable"
+msgstr "版本取 VERSION 宏，可做"
+
+msgid "Only the dark theme this round; light / follow-system is undecided"
+msgstr "本期只实现深色，浅色 / 跟随系统待定"
+
+msgid "There is no in-game overlay on Linux → marked as not applicable"
+msgstr "Linux 没有游戏内叠加层 → 标记「不适用」"
+
+msgid "Onboarding flow is undecided"
+msgstr "引导流程未定"
+
+msgid "Local preferences are doable; per-game switching has no game detection"
+msgstr "本地偏好可做；「按游戏自动切换」无游戏检测"
+
+msgid ""
+"Overclocking is limited by the EC (capability unknown); Windows power saving is not "
+"applicable"
+msgstr "超频受 EC 限制（能力未知）；Windows 节能模式不适用"

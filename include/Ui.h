@@ -15,6 +15,9 @@ struct Services {
     Thermals *thermals = nullptr;
     AcpiUtils *acpi = nullptr;
     EffectController *effects = nullptr;
+    /// daemon 是否在跑：没跑时 ACPI 侧会退回 pkexec（弹授权框），页面要据此给提示，
+    /// 并且不要在启动时读 ACPI 的值（见 DESIGN.md 第三节）。
+    bool daemonRunning = false;
 };
 
 /// 启动 GTK4 前端。返回 g_application_run() 的退出码。

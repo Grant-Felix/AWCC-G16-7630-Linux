@@ -1,35 +1,88 @@
-/* 前端样式（M0.4 打底，M0.5 扩成完整深色主题）。
-   中文必须走 Noto Sans CJK **SC**：本机 fc-match 默认会落到 KR（韩文变体），字形会不对。 */
+/* 前端样式（对照 ADAPTATION.md 第九节那 14 张戴尔官方 AWCC 参考图）。
+   要点：整体深色、面板略亮于底、红色强调色、窄图标栏、圆角卡片、选中态用红色。
+
+   中文必须走 Noto Sans CJK **SC**：本机 fc-match 默认会落到 KR（韩文变体），字形会不对。
+   图标边长由 Ui.cpp 按窗口尺寸算（只设 GtkImage 的 pixel-size），所以这里不写死
+   min-width / min-height 与 -gtk-icon-size，否则会和它打架。 */
+
+@define-color awcc_bg #14171c;
+@define-color awcc_panel #1d222b;
+@define-color awcc_panel_alt #232936;
+@define-color awcc_border #2d3542;
+@define-color awcc_text #e7eaf0;
+@define-color awcc_text_dim #9aa5b4;
+@define-color awcc_accent #e5483c;
+@define-color awcc_accent_soft alpha(@awcc_accent, 0.16);
 
 window,
 .background {
+  background-color: @awcc_bg;
+  color: @awcc_text;
   font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif;
 }
 
-/* 左导航栏：参考图里是窄的图标栏。
-   这里**不设** min-width / min-height 与 -gtk-icon-size —— 图标边长由 Ui.cpp 按窗口尺寸
-   算出来（GtkImage 的 pixel-size + 按钮 size-request），CSS 一旦写死就会和它打架。 */
+/* ── 左导航栏 ─────────────────────────────────────────────────────────── */
+#nav_rail {
+  background-color: @awcc_panel;
+  border-right: 1px solid @awcc_border;
+}
+
 #nav_rail button {
   padding: 0;
   border-radius: 10px;
+  color: @awcc_text_dim;
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
-/* 页头面包屑 */
+#nav_rail button:hover {
+  background-color: alpha(@awcc_text, 0.07);
+  color: @awcc_text;
+}
+
+#nav_rail button:checked {
+  background-color: @awcc_accent;
+  color: #ffffff;
+}
+
+/* ── 页头面包屑 ───────────────────────────────────────────────────────── */
 #crumb_main {
   font-weight: bold;
 }
 
-/* 占位页 */
+#crumb_sub {
+  color: @awcc_text_dim;
+}
+
+/* ── 卡片 ─────────────────────────────────────────────────────────────── */
+.card {
+  background-color: @awcc_panel;
+  border: 1px solid @awcc_border;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.card-note {
+  color: @awcc_text_dim;
+  font-size: 12px;
+}
+
 .page-title {
   font-size: 20px;
   font-weight: bold;
 }
 
 .page-note {
-  opacity: 0.6;
+  color: @awcc_text_dim;
 }
 
-/* 「施工中」徽标：DESIGN.md 第六节的约定之一 */
+/* ── 状态徽标：DESIGN.md 第六节的三种状态 ───────────────────────────── */
 .badge-construction {
   background-color: alpha(@warning_color, 0.18);
   color: @warning_color;
@@ -39,7 +92,109 @@ window,
   font-size: 12px;
 }
 
-/* 子页切换（概况 / 散热 这类） */
+.badge-na {
+  background-color: alpha(@awcc_text, 0.08);
+  color: @awcc_text_dim;
+  border: 1px solid alpha(@awcc_text, 0.18);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* ── 模式按钮（参考图顶部那排：图标 + 文字，选中红色）────────────────── */
+.mode-button {
+  background-color: @awcc_panel_alt;
+  border: 1px solid @awcc_border;
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: @awcc_text_dim;
+}
+
+.mode-button:hover {
+  border-color: alpha(@awcc_accent, 0.6);
+  color: @awcc_text;
+}
+
+.mode-button:checked {
+  background-color: @awcc_accent_soft;
+  border-color: @awcc_accent;
+  color: @awcc_text;
+}
+
+/* ── 灯效按钮 ─────────────────────────────────────────────────────────── */
+.effect-button,
+.card button {
+  background-color: @awcc_panel_alt;
+  border: 1px solid @awcc_border;
+  border-radius: 10px;
+  color: @awcc_text;
+}
+
+.effect-button:hover,
+.card button:hover {
+  border-color: alpha(@awcc_accent, 0.6);
+}
+
+/* ── 子页切换（概况 / 散热 这类）──────────────────────────────────────── */
 .subnav button {
   font-size: 13px;
+  background-color: @awcc_panel_alt;
+  border: 1px solid @awcc_border;
+  border-radius: 999px;
+  color: @awcc_text_dim;
+}
+
+.subnav button:checked {
+  background-color: @awcc_accent;
+  border-color: @awcc_accent;
+  color: #ffffff;
+}
+
+/* ── 滑块与开关 ───────────────────────────────────────────────────────── */
+.card scale trough {
+  background-color: @awcc_panel_alt;
+  border-radius: 999px;
+  min-height: 6px;
+}
+
+.card scale highlight {
+  background-color: @awcc_accent;
+  border-radius: 999px;
+}
+
+.card scale slider {
+  background-color: #ffffff;
+  border-radius: 999px;
+  min-width: 14px;
+  min-height: 14px;
+}
+
+.card switch:checked {
+  background-color: @awcc_accent;
+}
+
+/* 数值显示 */
+.value-label {
+  color: @awcc_text;
+  font-weight: bold;
+}
+
+.value-unit {
+  color: @awcc_text_dim;
+  font-size: 12px;
+}
+
+.row-label {
+  color: @awcc_text_dim;
+  font-size: 13px;
+}
+
+/* daemon 没在跑时的提示条 */
+.warn-strip {
+  background-color: alpha(@warning_color, 0.15);
+  border: 1px solid alpha(@warning_color, 0.4);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: @warning_color;
+  font-size: 12px;
 }
