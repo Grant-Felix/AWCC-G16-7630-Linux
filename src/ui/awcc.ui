@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  主窗口外壳（M0.4）：左导航栏 + 面包屑 + 内容 GtkStack。
-  页面本体由 src/ui/Ui.cpp 生成——M0 阶段它们还是「施工中」占位，等各里程碑接入后端
-  后再逐个搬成 .ui（见 TODO.md M0.4 的说明）。
+  主窗口外壳：左导航栏 + 面包屑 + 内容 GtkStack。
+  - 页面本体由 src/ui/Ui.cpp 生成——M0 阶段还是「施工中」占位，各里程碑接入后端后再逐个搬成 .ui。
+  - 串一律写英文并标 translatable="yes"：GtkBuilder 按 Ui.cpp 设的 gettext 域查 po/zh_CN.po，
+    查不到就回落成这里的英文，于是中文环境中文、其他环境英文。
+  - content_root 是内容根节点：Ui.cpp 在它上面挂帧时钟回调，用内容区尺寸算图标边长。
+    （不用自定义容器 + size_allocate vfunc：GtkBox 自带 layout manager，GTK4 在这种情况下
+    不会调用该 vfunc，实测加探针一次都没进。）
 -->
 <interface>
   <requires lib="gtk" version="4.10" />
@@ -20,7 +24,7 @@
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkLabel" id="crumb_main">
-                    <property name="label">主页</property>
+                    <property name="label" translatable="yes">Home</property>
                     <attributes>
                       <attribute name="weight" value="bold" />
                     </attributes>
@@ -34,7 +38,7 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="crumb_sub">
-                    <property name="label">系统</property>
+                    <property name="label" translatable="yes">System</property>
                   </object>
                 </child>
               </object>
@@ -42,7 +46,7 @@
           </object>
         </child>
         <property name="content">
-          <object class="GtkBox">
+          <object class="GtkBox" id="content_root">
             <property name="orientation">horizontal</property>
             <child>
               <object class="GtkBox" id="nav_rail">
@@ -55,7 +59,7 @@
                   <object class="GtkToggleButton" id="nav_home">
                     <property name="name">home</property>
                     <property name="icon-name">go-home-symbolic</property>
-                    <property name="tooltip-text">主页</property>
+                    <property name="tooltip-text" translatable="yes">Home</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -63,7 +67,7 @@
                   <object class="GtkToggleButton" id="nav_performance">
                     <property name="name">performance</property>
                     <property name="icon-name">power-profile-performance-symbolic</property>
-                    <property name="tooltip-text">性能</property>
+                    <property name="tooltip-text" translatable="yes">Performance</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -71,7 +75,7 @@
                   <object class="GtkToggleButton" id="nav_alienfx">
                     <property name="name">alienfx</property>
                     <property name="icon-name">input-keyboard-symbolic</property>
-                    <property name="tooltip-text">ALIENFX™</property>
+                    <property name="tooltip-text" translatable="yes">ALIENFX™</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -79,7 +83,7 @@
                   <object class="GtkToggleButton" id="nav_macro">
                     <property name="name">macro</property>
                     <property name="icon-name">media-playlist-consecutive-symbolic</property>
-                    <property name="tooltip-text">宏</property>
+                    <property name="tooltip-text" translatable="yes">Macros</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -87,7 +91,7 @@
                   <object class="GtkToggleButton" id="nav_library">
                     <property name="name">library</property>
                     <property name="icon-name">view-grid-symbolic</property>
-                    <property name="tooltip-text">库</property>
+                    <property name="tooltip-text" translatable="yes">Library</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -101,7 +105,7 @@
                   <object class="GtkToggleButton" id="nav_settings">
                     <property name="name">settings</property>
                     <property name="icon-name">preferences-system-symbolic</property>
-                    <property name="tooltip-text">设置</property>
+                    <property name="tooltip-text" translatable="yes">Settings</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>
@@ -109,7 +113,7 @@
                   <object class="GtkToggleButton" id="nav_help">
                     <property name="name">help</property>
                     <property name="icon-name">help-about-symbolic</property>
-                    <property name="tooltip-text">帮助</property>
+                    <property name="tooltip-text" translatable="yes">Help</property>
                     <property name="has-frame">false</property>
                   </object>
                 </child>

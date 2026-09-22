@@ -5,8 +5,10 @@
 #include "Thermals.h"
 #include "Ui.h"
 #include <algorithm>
+#include <clocale>
 #include <cstring>
 #include <format>
+#include <glib/gi18n.h>
 #include <ios>
 #include <iostream>
 #include <loguru.hpp>
@@ -275,7 +277,30 @@ static int handleCliCommands(std::span<char *> args, EffectController &effects,
 
 } // namespace awcc
 
+namespace {
+// 国际化：源串一律英文（gettext 查不到译文时回落到 msgid），译文在 po/ 下编成 .mo。
+// 按 LANG / LC_MESSAGES 自动选，所以中文环境显示中文、其他环境显示英文。
+// .mo 的查找顺序：AWCC_LOCALEDIR 环境变量 → 构建目录 → 安装目录（两者都是编译期写死的）。
+void setupI18n() {
+    std::setlocale(LC_ALL, "");
+
+    const char *dir = AWCC_LOCALEDIR_INSTALL;
+    const char *envDir = g_getenv("AWCC_LOCALEDIR");
+    if (envDir != nullptr && *envDir != '\0') {
+        dir = envDir;
+    } else if (g_file_test(AWCC_LOCALEDIR_BUILD, G_FILE_TEST_IS_DIR)) {
+        dir = AWCC_LOCALEDIR_BUILD;
+    }
+
+    bindtextdomain(GETTEXT_PACKAGE, dir);
+    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
+    textdomain(GETTEXT_PACKAGE);
+}
+} // namespace
+
 int main(int argc, char *argv[]) {
+    setupI18n();
+
     std::span<char *> args(argv, argc);
     // loguru::g_stderr_verbosity = -1;
     // loguru::init(argc, argv);

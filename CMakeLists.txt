@@ -163,10 +163,65 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/gMode.png
   VERBATIM)
 
+# ===================== 国际化 =====================
+# 源串写英文，译文放 po/*.po，运行期 gettext 按 LANG / LC_MESSAGES 自动选（见 main.cpp 的
+# setupI18n 与 DESIGN.md 第二节）。从构建树里跑时用 build/locale 下的 .mo，装到系统后走
+# /usr/share/locale；两者都编进二进制，运行期择一。
+find_package(Intl REQUIRED)
+find_program(MSGFMT NAMES msgfmt REQUIRED)
+find_program(XGETTEXT NAMES xgettext REQUIRED)
+
+set(AWCC_LOCALEDIR_INSTALL
+    "/usr/share/locale"
+    CACHE PATH "安装后的 locale 目录")
+set(AWCC_LOCALEDIR_BUILD "${CMAKE_BINARY_DIR}/locale")
+
+file(GLOB AWCC_PO_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/po/*.po)
+set(AWCC_MO_FILES "")
+foreach(po_file ${AWCC_PO_FILES})
+  get_filename_component(lang ${po_file} NAME_WE)
+  set(mo_file ${AWCC_LOCALEDIR_BUILD}/${lang}/LC_MESSAGES/awcc.mo)
+  add_custom_command(
+    OUTPUT ${mo_file}
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            ${AWCC_LOCALEDIR_BUILD}/${lang}/LC_MESSAGES
+    COMMAND ${MSGFMT} --check-format -o ${mo_file} ${po_file}
+    DEPENDS ${po_file}
+    VERBATIM)
+  list(APPEND AWCC_MO_FILES ${mo_file})
+  install(FILES ${mo_file}
+          DESTINATION ${AWCC_LOCALEDIR_INSTALL}/${lang}/LC_MESSAGES
+          RENAME awcc.mo)
+endforeach()
+
+add_custom_target(translations ALL DEPENDS ${AWCC_MO_FILES})
+
+# 改了源码或 .ui 里的串之后，用 `ninja -C build pot` 刷新模板，再 msgmerge 进各 .po
+add_custom_target(
+  pot
+  COMMAND
+    ${XGETTEXT} --language=C++ --keyword=_ --keyword=N_ --from-code=UTF-8
+    --package-name=awcc --output=${CMAKE_CURRENT_SOURCE_DIR}/po/awcc.pot
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/Ui.cpp
+  COMMAND
+    ${XGETTEXT} --language=Glade --from-code=UTF-8 --package-name=awcc -j
+    --output=${CMAKE_CURRENT_SOURCE_DIR}/po/awcc.pot
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/awcc.ui
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "生成 po/awcc.pot")
+
 # ===================== App =====================
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(${APP_NAME} ${SOURCES} ${AWCC_GRESOURCE_C})
+
+add_dependencies(${APP_NAME} translations)
+
+target_compile_definitions(
+  ${APP_NAME}
+  PRIVATE GETTEXT_PACKAGE="awcc"
+          AWCC_LOCALEDIR_BUILD="${AWCC_LOCALEDIR_BUILD}"
+          AWCC_LOCALEDIR_INSTALL="${AWCC_LOCALEDIR_INSTALL}")
 
 target_include_directories(${APP_NAME} PRIVATE include)
 

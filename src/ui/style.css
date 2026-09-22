@@ -6,11 +6,10 @@ window,
   font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif;
 }
 
-/* 左导航栏：参考图里是窄的图标栏 */
+/* 左导航栏：参考图里是窄的图标栏。
+   这里**不设** min-width / min-height 与 -gtk-icon-size —— 图标边长由 Ui.cpp 按窗口尺寸
+   算出来（GtkImage 的 pixel-size + 按钮 size-request），CSS 一旦写死就会和它打架。 */
 #nav_rail button {
-  -gtk-icon-size: 20px;
-  min-width: 38px;
-  min-height: 38px;
   padding: 0;
   border-radius: 10px;
 }
