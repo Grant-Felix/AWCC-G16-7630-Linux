@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  主窗口外壳（M0.4）：左导航栏 + 面包屑 + 内容 GtkStack。
+  页面本体由 src/ui/Ui.cpp 生成——M0 阶段它们还是「施工中」占位，等各里程碑接入后端
+  后再逐个搬成 .ui（见 TODO.md M0.4 的说明）。
+-->
+<interface>
+  <requires lib="gtk" version="4.10" />
+  <requires lib="Adw" version="1.0" />
+
+  <object class="AdwApplicationWindow" id="main_window">
+    <property name="default-width">1000</property>
+    <property name="default-height">680</property>
+    <child>
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="title-widget">
+              <object class="GtkBox">
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkLabel" id="crumb_main">
+                    <property name="label">主页</property>
+                    <attributes>
+                      <attribute name="weight" value="bold" />
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">|</property>
+                    <property name="opacity">0.4</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="crumb_sub">
+                    <property name="label">系统</property>
+                  </object>
+                </child>
+              </object>
+            </property>
+          </object>
+        </child>
+        <property name="content">
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <child>
+              <object class="GtkBox" id="nav_rail">
+                <property name="orientation">vertical</property>
+                <property name="spacing">2</property>
+                <property name="width-request">56</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">8</property>
+                <child>
+                  <object class="GtkToggleButton" id="nav_home">
+                    <property name="name">home</property>
+                    <property name="icon-name">go-home-symbolic</property>
+                    <property name="tooltip-text">主页</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_performance">
+                    <property name="name">performance</property>
+                    <property name="icon-name">power-profile-performance-symbolic</property>
+                    <property name="tooltip-text">性能</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_alienfx">
+                    <property name="name">alienfx</property>
+                    <property name="icon-name">input-keyboard-symbolic</property>
+                    <property name="tooltip-text">ALIENFX™</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_macro">
+                    <property name="name">macro</property>
+                    <property name="icon-name">media-playlist-consecutive-symbolic</property>
+                    <property name="tooltip-text">宏</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_library">
+                    <property name="name">library</property>
+                    <property name="icon-name">view-grid-symbolic</property>
+                    <property name="tooltip-text">库</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="vexpand">true</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_settings">
+                    <property name="name">settings</property>
+                    <property name="icon-name">preferences-system-symbolic</property>
+                    <property name="tooltip-text">设置</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="nav_help">
+                    <property name="name">help</property>
+                    <property name="icon-name">help-about-symbolic</property>
+                    <property name="tooltip-text">帮助</property>
+                    <property name="has-frame">false</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStack" id="content_stack">
+                <property name="hexpand">true</property>
+                <property name="vexpand">true</property>
+                <property name="transition-type">crossfade</property>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+  </object>
+</interface>

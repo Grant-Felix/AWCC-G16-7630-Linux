@@ -34,9 +34,10 @@ endif()
 # 完整串留给 VERSION 宏（awcc help / device-info 与 GUI 标题用）。
 string(REGEX REPLACE "-[0-9]+$" "" AWCC_VERSION_NUMERIC "${AWCC_VERSION}")
 
+# LANGUAGES 必须含 C：GResource 生成的 awcc.gresource.c 是 C 源码（见下面「前端资源」一节）。
 project(
   awcc
-  LANGUAGES CXX
+  LANGUAGES C CXX
   VERSION ${AWCC_VERSION_NUMERIC})
 
 message(STATUS "awcc 版本串：${AWCC_VERSION}（CMake project VERSION ${PROJECT_VERSION}）")
@@ -141,10 +142,31 @@ set_target_properties(
 
 add_dependencies(libevdev::libevdev libevdev)
 
+# ===================== 前端资源 =====================
+# .ui 与 CSS 用 GtkBuilder + GResource 打进二进制（见 DESIGN.md 第二节）。资源名与 alias
+# 见 src/ui/awcc.gresource.xml —— 那里以仓库根为 --sourcedir，所以 DEPENDS 用相对仓库根的路径。
+find_program(GLIB_COMPILE_RESOURCES NAMES glib-compile-resources REQUIRED)
+set(AWCC_GRESOURCE_C ${CMAKE_CURRENT_BINARY_DIR}/awcc.gresource.c)
+add_custom_command(
+  OUTPUT ${AWCC_GRESOURCE_C}
+  COMMAND
+    ${GLIB_COMPILE_RESOURCES} --generate-source --target=${AWCC_GRESOURCE_C}
+    --sourcedir=${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/awcc.gresource.xml
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/awcc.gresource.xml
+          ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/awcc.ui
+          ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/style.css
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/quiteMode.png
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/balancedMode.png
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/performanceMode.png
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/batteryMode.png
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets/modes/gMode.png
+  VERBATIM)
+
 # ===================== App =====================
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
-add_executable(${APP_NAME} ${SOURCES})
+add_executable(${APP_NAME} ${SOURCES} ${AWCC_GRESOURCE_C})
 
 target_include_directories(${APP_NAME} PRIVATE include)
 

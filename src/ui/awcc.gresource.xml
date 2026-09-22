@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  .ui、CSS 与模式图标打进二进制，运行时用 gtk_builder_new_from_resource() 读（见 src/ui/Ui.cpp）。
+  编译时以**仓库根**为 --sourcedir，所以下面写的是相对仓库根的路径；alias 用来把资源名
+  收干净（资源路径里不允许出现 ".."）。
+-->
+<gresources>
+  <gresource prefix="/org/felix/awcc">
+    <file alias="awcc.ui">src/ui/awcc.ui</file>
+    <file alias="style.css">src/ui/style.css</file>
+    <file alias="modes/quiteMode.png">assets/modes/quiteMode.png</file>
+    <file alias="modes/balancedMode.png">assets/modes/balancedMode.png</file>
+    <file alias="modes/performanceMode.png">assets/modes/performanceMode.png</file>
+    <file alias="modes/batteryMode.png">assets/modes/batteryMode.png</file>
+    <file alias="modes/gMode.png">assets/modes/gMode.png</file>
+  </gresource>
+</gresources>

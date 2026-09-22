@@ -1,0 +1,46 @@
+/* 前端样式（M0.4 打底，M0.5 扩成完整深色主题）。
+   中文必须走 Noto Sans CJK **SC**：本机 fc-match 默认会落到 KR（韩文变体），字形会不对。 */
+
+window,
+.background {
+  font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif;
+}
+
+/* 左导航栏：参考图里是窄的图标栏 */
+#nav_rail button {
+  -gtk-icon-size: 20px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+/* 页头面包屑 */
+#crumb_main {
+  font-weight: bold;
+}
+
+/* 占位页 */
+.page-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.page-note {
+  opacity: 0.6;
+}
+
+/* 「施工中」徽标：DESIGN.md 第六节的约定之一 */
+.badge-construction {
+  background-color: alpha(@warning_color, 0.18);
+  color: @warning_color;
+  border: 1px solid alpha(@warning_color, 0.45);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* 子页切换（概况 / 散热 这类） */
+.subnav button {
+  font-size: 13px;
+}
