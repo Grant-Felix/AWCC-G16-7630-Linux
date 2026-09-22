@@ -28,6 +28,7 @@
 | `CMakeLists.txt` | 版本号改为按 `version:refname` 取版本最大的日期式 tag，`VERSION` 宏用完整串 | 见第六节 |
 | `scripts/release.sh` | 新增：按日期算当天第几次打包，可选打 tag 与推送 | 见第六节 |
 | `.github/workflows/build.yml` | tag 触发规则、版本传参与产物命名改用日期式 | 见第六节 |
+| `.github/workflows/release.yml`、`release-please-config.json`、`.release-please-manifest.json` | 删除（上游那套 release-please 发布链路） | 只会产 semver，与日期式版本号冲突，见第六节 |
 
 ## 三、为什么灯效在本机型不生效
 
@@ -81,10 +82,10 @@ sudo install -Dm755 build/awcc /usr/local/bin/awcc
 `26.09.22-1` 里的前导零会让它不再是合法 semver（npm 与 Cargo 都拒）；也不写四段式。标签、
 `VERSION` 宏、发布标题与产物文件名用同一串，产物为 `AWCC-v26.9.22-1.tar.gz`。
 
-上游用 release-please 产 semver（`v1.19.0` 那批），与本方案冲突，故本 fork 不启用它：
+上游用 release-please 产 semver（`v1.19.0` 那批），与本方案冲突，因此本 fork 不用它：
 `.github/workflows/release.yml`、`release-please-config.json` 与 `.release-please-manifest.json`
-保留上游原样、不参与本 fork 发布（本机 Forgejo 的 Actions 也未启用）。CHANGELOG 里上游那段
-历史照旧，本 fork 的日期版从头往下追加。
+已删除（本机 Forgejo 的 Actions 未启用，它们本来也不会跑；上游那个 `stable` 标签只由 release.yml
+维护，本仓库从未有过该标签）。CHANGELOG 里上游那段历史照旧，本 fork 的日期版从头往下追加。
 
 版本串的**唯一出处是 git tag**：`CMakeLists.txt` 按 `version:refname` 取版本最大的日期式 tag
 （不用 `git describe`——同一天多次打包会把多个 tag 打在同一个提交上，实测 describe 会挑到前一天
