@@ -71,16 +71,17 @@ class Telemetry {
 
 ### M0 骨架：能起窗口、能切页（全部页面先带「施工中」）
 
-M0.1–M0.3 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui` 起出 GTK4 窗口并经
-`GtkApplication` 注册到会话总线，imgui / glfw / OpenGL / X11 / stb 与上游 ImGui 界面一并退役，
-模式图标抽成 `assets/modes/*.png`。余下 M0.4（导航与 12 个页面）与 M0.5（深色 CSS）。
+M0.1–M0.4 已完成（2026-09-22）：构建接上 GTK4 / libadwaita，`--gui` 起出窗口并经 `GtkApplication`
+注册到会话总线，imgui / glfw / OpenGL / X11 / stb 与上游 ImGui 界面一并退役，模式图标抽成
+`assets/modes/*.png`；外壳（窗口 + 左栏 + 面包屑 + `GtkStack`）走 `GtkBuilder` `.ui` + `GResource`，
+各页面先由代码生成「施工中」占位。余下 M0.5（深色 CSS）。
 
 | 步骤 | 产物 | 验证命令 | 完成判据 |
 | --- | --- | --- | --- |
 | M0.1 构建整合 | `CMakeLists.txt` 用 `pkg_check_modules` 找 `gtk4` / `libadwaita-1`；新增 `src/ui/`、`include/Ui.h` | `pkg-config --exists gtk4 libadwaita-1 && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && ninja -C build` | 配置与编译通过 |
 | M0.2 最小窗口 | `GtkApplication` + `GtkApplicationWindow`，标题 `Alienware Command Center v<版本>`（取 `VERSION` 宏） | `./build/awcc --gui` | Wayland 下出现窗口，标题带版本串 |
 | M0.3 旧 UI 退役 | 删 `src/gui/`、`src/resources.cpp`、`include/Renderui.h`、`include/Gui.h`；CMake 去掉 imgui / glfw / OpenGL / X11 依赖 | `grep -rn "imgui\|glfw" src include CMakeLists.txt` | 无输出；构建仍通过（`ADAPTATION.md` 第二节的 imgui 钉版本补丁同步标注退役） |
-| M0.4 导航与占位页 | `.ui` 文件 + `GResource`；左侧图标栏、顶部面包屑、`GtkStack` 内 12 个页面（每页一个标题 + 「施工中」徽标） | `gtk4-builder-tool validate src/ui/*.ui && ./build/awcc --gui` | 12 个页面都能切到，标题与面包屑同步 |
+| M0.4 导航与占位页 | 外壳写成 `src/ui/awcc.ui`（`AdwApplicationWindow` + 左栏图标 + 面包屑 + `GtkStack`）+ `GResource` 打进二进制；页面先由 `Ui.cpp` 生成占位（7 个一级页 + 10 个子页，每个带「施工中」徽标与缺什么后端的一句话） | `./build/awcc --ui-selftest` | 页面树打印出 17 个节点、退出码 0；`--gui` 能切页且面包屑同步 |
 | M0.5 样式 | `src/ui/style.css`，深色底、强调色、`font-family: "Noto Sans CJK SC"` | 起窗口看中文标签不是豆腐块、字形不是韩文变体 | CSS 生效；中文正常 |
 
 ### M1 遥测层
@@ -141,8 +142,9 @@ cd "/home/felix/项目/AWCC G16 7630 Linux"
 pkg-config --exists gtk4 libadwaita-1 && echo "GTK4 依赖 ok"
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && ninja -C build
 
-# 2) 界面描述合法
-gtk4-builder-tool validate src/ui/*.ui
+# 2) 界面自检：把页面树建出来并打印，对象缺失或页面不全就以非零码退出
+#    （不用 gtk4-builder-tool validate——它认不出 libadwaita 的 Adw* 类型，对含 Adw 的 .ui 必失败）
+./build/awcc --ui-selftest
 
 # 3) 版本号仍从 tag 取（回归：不该被 UI 改动破坏）
 ./build/awcc -h | head -1        # 期望 Alienware Command Center v26.9.22-1
