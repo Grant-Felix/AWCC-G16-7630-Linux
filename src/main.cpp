@@ -3,7 +3,7 @@
 #include "EffectController.h"
 #include "LightFX.h"
 #include "Thermals.h"
-#include <Renderui.h>
+#include "Ui.h"
 #include <algorithm>
 #include <cstring>
 #include <format>
@@ -321,16 +321,17 @@ int main(int argc, char *argv[]) {
         LOG_S(INFO) << "Initializing Thermals Module";
         Thermals awccthermals(acpiUtils);
 
-        // TODO: Add check for light mode in gui
-        if (daemon.isDaemonRunning()) {
-            LOG_S(INFO) << "Rendering UI";
-            RenderUi::Init(awccthermals, acpiUtils, effects);
-            return 0;
-        } else {
-            LOG_S(ERROR) << "GUI Mode Requires daemon by default,run daemon by "
-                            "sudo ./main -d";
-            return 1;
+        // 前端不硬性要求 daemon：ACPI 侧没有 daemon 时会退回 pkexec（AcpiUtils 里已有该
+        // 兜底），需要 daemon 的控件由页面自己标为不可用（见 DESIGN.md 第三、六节）。
+        if (!daemon.isDaemonRunning()) {
+            LOG_S(WARNING)
+                << "Daemon not running: ACPI operations will fall back to pkexec "
+                   "(authorization prompt expected)";
         }
+
+        LOG_S(INFO) << "Rendering UI";
+        const Ui::Services services{&awccthermals, &acpiUtils, &effects};
+        return Ui::Run(argc, argv, services);
     }
     if (awcc::shouldRunDaemon(args)) {
         LOG_S(INFO) << "Initializing LightFX Module";

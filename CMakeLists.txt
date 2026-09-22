@@ -74,11 +74,14 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 include(FetchContent)
-find_package(OpenGL REQUIRED)
 
-if(UNIX AND NOT APPLE)
-  find_package(X11 REQUIRED)
-endif()
+# ===================== GTK4 =====================
+# 前端用 GTK4 C API + libadwaita（见 DESIGN.md 第二节）：系统库，走 pkg-config。
+# 不引 gtkmm（它虽是官方 C++ 绑定）：官方文档与示例全围绕 C API，且 libadwaita
+# 没有 C++ 绑定（本机与发行版仓库都没有 libadwaitamm）。
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
+pkg_check_modules(ADWAITA REQUIRED IMPORTED_TARGET libadwaita-1)
 
 # ===================== Loguru =====================
 FetchContent_Declare(
@@ -98,58 +101,6 @@ FetchContent_Declare(
   GIT_TAG master
   GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(json)
-
-# ===================== GLFW =====================
-set(GLFW_BUILD_EXAMPLES
-    OFF
-    CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS
-    OFF
-    CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS
-    OFF
-    CACHE BOOL "" FORCE)
-set(GLFW_INSTALL
-    OFF
-    CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG master
-  GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(glfw)
-
-# ===================== ImGui =====================
-# 本 fork 修改（2026-09-21，详见 ADAPTATION.md）：上游这里是 GIT_TAG master。imgui master 是
-# 1.93 WIP，2026-09 那批提交里取色器（ColorEdit 的弹窗）在本机渲染成全黑，所以钉回 v1.19.0
-# 发布时（2026-06-04）CI 取到的那个提交。钉 SHA 不能用浅克隆，故 GIT_SHALLOW 关掉。
-FetchContent_Declare(
-  imgui
-  GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG 6acba3b47d2ac4c7bb5ffb6ab04bcd896b3d3658
-  GIT_SHALLOW FALSE)
-FetchContent_MakeAvailable(imgui)
-
-add_library(imgui STATIC)
-target_sources(
-  imgui
-  PRIVATE ${imgui_SOURCE_DIR}/imgui.cpp
-          ${imgui_SOURCE_DIR}/imgui_draw.cpp
-          ${imgui_SOURCE_DIR}/imgui_tables.cpp
-          ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-          ${imgui_SOURCE_DIR}/imgui_demo.cpp
-          ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-          ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
-
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR}
-                                        ${imgui_SOURCE_DIR}/backends)
-
-target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
-
-if(UNIX AND NOT APPLE)
-  target_link_libraries(imgui PUBLIC X11::X11 dl pthread)
-endif()
 
 # ===================== libusb =====================
 set(LIBUSB_BUILD_SHARED
@@ -190,33 +141,24 @@ set_target_properties(
 
 add_dependencies(libevdev::libevdev libevdev)
 
-# ===================== stb =====================
-FetchContent_Declare(
-  stb
-  GIT_REPOSITORY https://github.com/nothings/stb.git
-  GIT_TAG master
-  GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(stb)
-
 # ===================== App =====================
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(${APP_NAME} ${SOURCES})
 
-target_include_directories(${APP_NAME} PRIVATE include ${stb_SOURCE_DIR})
+target_include_directories(${APP_NAME} PRIVATE include)
 
 target_link_libraries(
   ${APP_NAME}
-  PRIVATE glfw
-          imgui
-          OpenGL::GL
+  PRIVATE PkgConfig::GTK4
+          PkgConfig::ADWAITA
           loguru::loguru
           nlohmann_json::nlohmann_json
           usb-1.0
           libevdev::libevdev)
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(${APP_NAME} PRIVATE X11::X11 dl pthread)
+  target_link_libraries(${APP_NAME} PRIVATE dl pthread)
 endif()
 
 # ===================== Install =====================
