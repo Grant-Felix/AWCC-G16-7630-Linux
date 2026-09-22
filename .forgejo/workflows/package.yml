@@ -54,8 +54,9 @@ jobs:
               ninja-build meson pkg-config libgtk-4-dev libadwaita-1-dev libudev-dev
           rm -rf build .cache
           dpkg-buildpackage -b -us -uc
-          ls -l /*.deb
-          ./scripts/attach-package.sh /*.deb
+          # 产物在工作区的**上一级**（dpkg-buildpackage 把包放在源码目录的父目录）
+          ls -l ../*.deb
+          ./scripts/attach-package.sh ../*.deb
 
   rpm:
     name: Fedora 包（rpmbuild + awcc.spec）
