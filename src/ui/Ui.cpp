@@ -84,6 +84,13 @@ struct AppContext {
     AcpiUtils *acpi = nullptr;
     EffectController *effects = nullptr;
     bool daemonRunning = false;
+    // 性能模式的唯一状态源：主页 / 性能·概况 / 性能·散热 三页各有一组模式按钮，状态统一放这里。
+    // 之前每页各建一组、各自记着建页那一刻的旧值，于是「主页改了、性能页不跟着变」（议题 #1）。
+    ThermalModes currentMode = ThermalModes::Balanced;
+    std::vector<std::pair<ThermalModes, GtkToggleButton *>> modeButtons;
+    std::vector<GtkWidget *> modeLabels; // 显示「当前模式」的文字，改模式后一起刷新
+    bool updatingModes = false;          // 刷新按钮状态期间别再回头触发一次设置
+    size_t modeRowCount = 0;             // 建了几组模式按钮（自检报告用）
     // 图标缩放
     // 用 deque 而不是 vector：buildModeCard 里会再 addIconGroup，vector 扩容会让先取的引用悬空
     std::deque<IconGroup> iconGroups;
@@ -350,17 +357,47 @@ constexpr ModeSpec kModes[] = {
     {ThermalModes::Performance, ThermalModeSet::Performance, N_("Performance")},
     {ThermalModes::Gmode, ThermalModeSet::GMode, N_("G mode")},
 };
+// 三页共用的模式状态：任何一处改动 → 刷新所有按钮与「当前模式」文字
+const char *modeLabel(ThermalModes mode) {
+    for (const ModeSpec &spec : kModes) {
+        if (spec.mode == mode) {
+            return _(spec.label);
+        }
+    }
+    return "—"; // 机型上报的模式不在官方这六档里（例如 Manual）
+}
+
+void syncModeButtons(AppContext &ctx) {
+    // 期间 set_active 也会发 toggled，用标志挡掉，免得回头又去写一次模式
+    ctx.updatingModes = true;
+    for (const auto &[mode, btn] : ctx.modeButtons) {
+        gtk_toggle_button_set_active(btn, mode == ctx.currentMode);
+    }
+    for (GtkWidget *label : ctx.modeLabels) {
+        gtk_label_set_text(GTK_LABEL(label), modeLabel(ctx.currentMode));
+    }
+    ctx.updatingModes = false;
+}
+
+void applyMode(AppContext &ctx, ThermalModes mode) {
+    // 自检（--ui-selftest）里一概不碰硬件：不写 ACPI 也不回读，避免弹授权框，也保证自检无副作用
+    const bool touchHardware = !ctx.selftest && ctx.thermals != nullptr;
+    if (touchHardware) {
+        // 注意：daemon 没在跑时这里会走 pkexec，弹授权框期间主循环被挡住（见 DESIGN.md 第三节）
+        ctx.thermals->setThermalMode(mode);
+    }
+    // 只有 daemon 在跑时才回读硬件：没有它读 ACPI 同样会弹授权框（DESIGN.md 第三节）
+    ctx.currentMode = (touchHardware && ctx.daemonRunning) ? ctx.thermals->getCurrentMode() : mode;
+    syncModeButtons(ctx);
+}
+
 void onModeToggled(GtkToggleButton *btn, gpointer data) {
-    if (!gtk_toggle_button_get_active(btn)) {
+    auto *ctx = static_cast<AppContext *>(data);
+    if (ctx->updatingModes || !gtk_toggle_button_get_active(btn)) {
         return;
     }
-    auto *ctx = static_cast<AppContext *>(data);
-    const auto mode = static_cast<ThermalModes>(GPOINTER_TO_INT(
-        g_object_get_data(G_OBJECT(btn), "awcc-mode")));
-    if (ctx->thermals != nullptr) {
-        // 注意：daemon 没在跑时这里会走 pkexec，弹授权框期间主循环被挡住（见 DESIGN.md 第三节）
-        ctx->thermals->setThermalMode(mode);
-    }
+    applyMode(*ctx, static_cast<ThermalModes>(
+                        GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "awcc-mode"))));
 }
 
 // 官方样式里这排电源模式按钮是「无卡片、整行居中」浮在顶部辉光上的
@@ -371,8 +408,8 @@ GtkWidget *buildModeRow(AppContext &ctx) {
     gtk_widget_set_margin_bottom(row, 6);
 
     GtkToggleButton *leader = nullptr;
-    const ThermalModes current =
-        ctx.thermals != nullptr ? ctx.thermals->getCurrentMode() : ThermalModes::Balanced;
+    // 当前模式取自 ctx（onActivate 里定：只有 daemon 在跑才读硬件），不再各自去读一次 ACPI
+    const ThermalModes current = ctx.currentMode;
 
     for (const ModeSpec &spec : kModes) {
         if (ctx.acpi != nullptr && !ctx.acpi->hasThermalMode(spec.set)) {
@@ -389,11 +426,13 @@ GtkWidget *buildModeRow(AppContext &ctx) {
             gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(btn), leader);
         }
         g_signal_connect(btn, "toggled", G_CALLBACK(onModeToggled), &ctx);
+        // 登记到 ctx：这一组与另外两页的那两组从此共享同一个状态
+        ctx.modeButtons.emplace_back(spec.mode, GTK_TOGGLE_BUTTON(btn));
         gtk_box_append(GTK_BOX(row), btn);
-        if (spec.mode == current) {
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn), TRUE);
-        }
     }
+    // 建页时统一设一次选中状态（syncModeButtons 里是静默设置的，不会反过来去写模式）
+    ++ctx.modeRowCount;
+    syncModeButtons(ctx);
     return row;
 }
 
@@ -645,7 +684,7 @@ constexpr FeatureSpec kFeatures[] = {
     {FeatureSet::GModeToggle, N_("G mode toggle")},
 };
 
-void addInfoRow(GtkWidget *card, const char *label, const std::string &value) {
+GtkWidget *addInfoRow(GtkWidget *card, const char *label, const std::string &value) {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
     gtk_widget_add_css_class(row, "info-row");
     GtkWidget *key = makeLabel(_(label), "row-label");
@@ -659,6 +698,7 @@ void addInfoRow(GtkWidget *card, const char *label, const std::string &value) {
     gtk_widget_set_halign(val, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(row), val);
     gtk_box_append(GTK_BOX(card), row);
+    return val; // 调用方需要时可以把数值标签登记起来，改数据后刷新
 }
 
 void addInfoSeparator(GtkWidget *card) {
@@ -676,8 +716,12 @@ GtkWidget *buildAboutCard(AppContext &ctx) {
     addInfoRow(card, N_("Keyboard zones"),
                std::to_string(ctx.acpi != nullptr ? ctx.acpi->getKeyboardZones().size() : 0));
     addInfoSeparator(card);
-    addInfoRow(card, N_("Current mode"),
-               ctx.thermals != nullptr ? ctx.thermals->getCurrentModeName() : "-");
+    // 这行要跟着模式变化刷新，所以把数值标签登记到 ctx；只有 daemon 在跑时才读 ACPI，
+    // 否则读它同样会弹授权框（DESIGN.md 第三节）
+    ctx.modeLabels.push_back(addInfoRow(
+        card, N_("Current mode"),
+        ctx.daemonRunning && ctx.thermals != nullptr ? ctx.thermals->getCurrentModeName()
+                                                    : modeLabel(ctx.currentMode)));
     addInfoSeparator(card);
     addInfoRow(card, N_("Daemon"),
                ctx.daemonRunning ? _("running (socket)") : _("not running (pkexec fallback)"));
@@ -1663,6 +1707,45 @@ void onActivate(GtkApplication *app, gpointer userData) {
             g_print("%s\n", line.c_str());
         }
         g_print("%zu page nodes\n", ctx->pageLog.size());
+
+        // 模式按钮一致性（议题 #1）：主页 / 性能·概况 / 性能·散热 各有一组，状态必须共享。
+        // 这里只改 ctx 里的状态再刷新，不碰硬件——自检不该写 ACPI、更不该弹授权框。
+        if (!ctx->modeButtons.empty()) {
+            const ThermalModes original = ctx->currentMode;
+            bool consistent = true;
+            for (const ModeSpec &spec : kModes) {
+                ctx->currentMode = spec.mode;
+                syncModeButtons(*ctx);
+                for (const auto &[mode, btn] : ctx->modeButtons) {
+                    if (gtk_toggle_button_get_active(btn) != (mode == spec.mode)) {
+                        consistent = false;
+                    }
+                }
+            }
+            ctx->currentMode = original;
+            syncModeButtons(*ctx);
+            g_print("mode sync: %zu 个按钮 / %zu 组 -> %s\n", ctx->modeButtons.size(),
+                    ctx->modeRowCount, consistent ? "所有组状态一致" : "不一致（议题 #1）");
+
+            // 再模拟一次真实点击（走 onModeToggled → applyMode），验证「点一组、另外两组跟着变」。
+            // 每组的按钮是连续登记的，所以按 组数 均分即可定位。
+            const size_t groupSize = ctx->modeButtons.size() / ctx->modeRowCount;
+            if (ctx->modeRowCount >= 2 && groupSize >= 2) {
+                gtk_toggle_button_set_active(ctx->modeButtons[groupSize - 1].second, TRUE);
+                bool followed = true;
+                for (size_t g = 1; g < ctx->modeRowCount; ++g) {
+                    if (!gtk_toggle_button_get_active(
+                            ctx->modeButtons[g * groupSize + groupSize - 1].second)) {
+                        followed = false;
+                    }
+                }
+                g_print("mode click: 在第一组点「%s」-> 另外 %zu 组%s\n",
+                        modeLabel(ctx->modeButtons[groupSize - 1].first), ctx->modeRowCount - 1,
+                        followed ? "同步" : "未同步（议题 #1）");
+            }
+            ctx->currentMode = original;
+            syncModeButtons(*ctx);
+        }
         // 兜底：窗口万一没 map，也不能把自检挂死
         g_timeout_add(5000, selftestFinish, ctx);
     }
@@ -1719,6 +1802,11 @@ int Ui::Run(int argc, char **argv, const Services &services) {
     ctx.acpi = services.acpi;
     ctx.effects = services.effects;
     ctx.daemonRunning = services.daemonRunning;
+    // 模式状态：只有 daemon 在跑时才读硬件——没有它读 ACPI 会弹授权框（见 DESIGN.md 第三节）。
+    // 三页的模式按钮建页时都取这个值，所以必须在建页之前定下来。
+    ctx.currentMode = (ctx.daemonRunning && ctx.thermals != nullptr)
+                          ? ctx.thermals->getCurrentMode()
+                          : ThermalModes::Balanced;
     ctx.config = Config::load();
     if (ctx.effects != nullptr) {
         ctx.brightness = std::clamp(ctx.effects->getBrightness(), 0, 100);
