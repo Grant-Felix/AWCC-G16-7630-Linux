@@ -105,10 +105,38 @@ build/awcc -h | head -1            # 应打印 Alienware Command Center v26.9.22
 
 没有日期式 tag 时（例如从 tarball 构建）版本串回落到占位 `0.0.0-0`，绝不会被当成已发布版本。
 
-## 七、与上游同步
+## 七、三个远端与上下游关系
+
+本仓库在三个平台上各有一份，职责不重叠，**代码只朝一个方向流**：
+
+| 远端 | 平台 | 职责 | 关系 |
+| --- | --- | --- | --- |
+| `origin` | 本机 Forgejo（`http://127.0.0.1:3000/Felix/AWCC-G16-7630-Linux`，私有） | **开发主仓**：日常提交、分支、tag 都推这里，代码与历史以它为准 | 根 |
+| `github` | [GitHub/Grant-Felix/AWCC-G16-7630-Linux](https://github.com/Grant-Felix/AWCC-G16-7630-Linux)（公开） | 对外窗口 + 反馈受理；从这里向真上游 `tr1xem/AWCC` 提 PR | **是 `tr1xem/AWCC` 的 fork**（`fork=true`，父仓库 `tr1xem/AWCC`），上游关系靠它保持 |
+| `gitee` | [Gitee/Grant-Felix/AWCC-G16-7630-Linux](https://gitee.com/Grant-Felix/AWCC-G16-7630-Linux)（公开） | 国内镜像 + 同样受理反馈（国内直连 GitHub 不便，不逼用户绕道） | **GitHub 的镜像**（从 GitHub 拉取） |
+| `upstream` | 本机只读镜像 `Felix/AWCC-upstream`（= GitHub 上的 `tr1xem/AWCC`） | 只用来 rebase 真上游，不在此提交 | 真上游 |
+
+**流向**：本地 Forgejo → GitHub → Gitee。**禁止反向直推**（把某个平台的提交直接推到另一个平台会造成
+历史分叉与重复改动）。两个公开平台上的 PR / patch 都只当反馈：先在本地 Forgejo 落地实现，再随镜像
+方向同步回去。同一个问题在**先提出的那一侧**开正式讨论并以其为准，另一侧贴链接引导，不要两边各说各话。
 
 ```bash
-git remote add upstream http://127.0.0.1:3000/Felix/AWCC-upstream.git   # 只需一次，本机镜像
+# 日常：先推开发主仓
+git push origin main
+# 再按流向同步（GitHub 是 fork，main 快进即可；tag 一起推）
+git push github main && git push github --tags
+git push gitee  main && git push gitee  --tags
+```
+
+**Gitee 的镜像同步需要在网页端开一次**（Gitee OpenAPI 没有镜像管理接口，CLI 也做不了）：
+仓库 → 管理 → **仓库镜像管理** → 添加镜像 → 源仓库填
+`https://github.com/Grant-Felix/AWCC-G16-7630-Linux.git`，方向选**拉取（Pull）**，开启自动同步。
+开好之后 Gitee 会自己跟 GitHub 对齐，日常只需要推 Forgejo 与 GitHub。
+
+### 与真上游同步
+
+```bash
+git remote add upstream http://127.0.0.1:3000/Felix/AWCC-upstream.git   # 只需一次，本机只读镜像
 git fetch upstream
 git log --oneline upstream/main..main       # 看本 fork 领先的提交
 git rebase upstream/main                    # 冲突通常只在 CMakeLists.txt、README 标题与 .github/workflows/build.yml
