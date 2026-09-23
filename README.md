@@ -50,7 +50,7 @@ touching the system (handy for trying it out).
 
 > Distro packages (deb / rpm / AUR) are **no longer maintained**: this fork targets a single
 > laptop model, and keeping three packaging recipes in sync cost more than it was worth.
-> The old recipes are kept under `debian/` and `packaging/` for reference only.
+> They were removed in favour of `install.sh` (git history keeps them if ever needed).
 
 ## ✨ Features
 

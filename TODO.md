@@ -110,6 +110,13 @@ EV_KEY），daemon 侧改成配置驱动（`/etc/awcc/keybinds.conf`，不存在
 | --- | --- |
 | `LOGURU=$(find build -name libloguru.a \| head -1); g++ -std=c++23 -Iinclude -Ibuild/_deps/loguru-src -DLOGURU_WITH_STREAMS=1 tests/keybinds_test.cpp src/KeyBinds.cpp "$LOGURU" -o /tmp/kbt && /tmp/kbt` | 17 项检查全部通过，末行「全部通过」 |
 
+**下次要做（2026-09-23 定）**：按键绑定支持**自定义命令**。口径：默认以**发起者普通用户身份**
+运行（daemon 绑定时经 SO_PEERCRED 记下 GUI 的 uid/gid，执行时 fork + setuid 降权）；可按命令勾选
+以 root 运行，此时走 `sudo -S`（daemon 先降权、把密码喂给 sudo 的标准输入，由 sudo 完成认证与提权，
+daemon 自己不实现提权逻辑）；密码两种来源，二选一：写进配置（`/etc/awcc/cmdpass`，600、明文，
+文档必须警告）或运行时由 GUI 弹窗输入（经订阅通道 `askpass <id>` / 回复回传）。界面上在按键绑定页
+加「运行命令」这类动作与密码来源选择。
+
 **还没做、但会立刻被察觉的一条**：配置持久化（`$XDG_CONFIG_HOME/awcc/config.ini`）尚未实现——
 现在改过的亮度 / 模式 / 灯效重启后不会记住（`EffectController` 仍写 root 所有的
 `/etc/awcc/brightness`，就是原计划要修掉的那个坑）。这是下一步的优先项。
