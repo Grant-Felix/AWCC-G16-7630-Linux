@@ -387,6 +387,8 @@ int main(int argc, char *argv[]) {
 
         daemon.setOnGmodeKeyCallback(
             [&awccthermals]() { awccthermals.toggleGmode(); });
+        // 按键绑定里的「mode:<名字>」动作要直接改模式，所以把 Thermals 也交给 daemon
+        daemon.setThermals(&awccthermals);
         awcc::runDaemonServer(daemon);
 
         if (geteuid() != 0) {

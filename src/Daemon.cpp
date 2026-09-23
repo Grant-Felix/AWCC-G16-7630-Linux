@@ -1,11 +1,13 @@
 #include "Daemon.h"
 #include "EffectController.h"
 #include "KeyBinder.h"
+#include "Thermals.h"
 #include "LightFX.h"
 #include "helper.h"
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
@@ -122,10 +124,13 @@ void Daemon::init() {
 
     // Desktop systems do not expose the internal laptop keyboard used for
     // Alienware hotkeys. Keep the daemon usable and only skip those hotkeys.
+    // 绑定表：文件不存在就用出厂默认（G 模式键切 G 模式、灯键循环亮度）
+    m_keyBinds = KeyBinds::Load(m_keyBindPath);
+
     m_binder = new KeyBinder("AT Translated Set 2 keyboard");
     if (m_binder->isAvailable()) {
-        m_binder->setOnGModeKey([this]() { this->m_onGmodeKey(); });
-        m_binder->setOnLightKey([this]() { this->m_onLightKey(); });
+        m_binder->setBinds(&m_keyBinds);
+        m_binder->setOnScan([this](int scan) { this->m_performKeyAction(scan); });
         m_keybinderThread = std::thread([this]() { this->m_binder->run(); });
     } else {
         LOG_S(WARNING) << "Internal keyboard hotkeys unavailable; continuing "
@@ -216,6 +221,9 @@ void Daemon::init() {
                 close(client_fd);
                 stop();  // cleanup
                 exit(0); // kill process
+            } else if (cmd.rfind("keybind-", 0) == 0) {
+                const std::string output = m_HandleKeyBindCommand(cmd);
+                write(client_fd, output.c_str(), output.size());
             } else {
                 std::string output = executeFromDaemon(cmd.c_str());
                 write(client_fd, output.c_str(), output.size());
@@ -224,6 +232,94 @@ void Daemon::init() {
         close(client_fd);
     }
 }
+void Daemon::m_performKeyAction(int scan) {
+    const std::string action = m_keyBinds.ActionFor(scan);
+    const char *label = KeyBinds::KeyLabel(scan);
+    LOG_S(INFO) << "按键触发：" << (label != nullptr ? label : "未知键") << "(" << scan
+                << ") -> " << action;
+    if (action.empty() || action == "none") {
+        return;
+    }
+    if (action == "gmode-toggle") {
+        m_onGmodeKey();
+        return;
+    }
+    if (action == "brightness-cycle") {
+        m_onLightKey();
+        return;
+    }
+    const std::string prefix = "mode:";
+    if (action.rfind(prefix, 0) == 0) {
+        if (m_thermals == nullptr) {
+            LOG_S(WARNING) << "没有装配 Thermals，模式类动作不可用";
+            return;
+        }
+        const std::string name = action.substr(prefix.size());
+        ThermalModes mode;
+        if (name == "battery") {
+            mode = ThermalModes::BatterySaver;
+        } else if (name == "cool") {
+            mode = ThermalModes::Cool;
+        } else if (name == "quiet") {
+            mode = ThermalModes::Quiet;
+        } else if (name == "balanced") {
+            mode = ThermalModes::Balanced;
+        } else if (name == "performance") {
+            mode = ThermalModes::Performance;
+        } else if (name == "gmode") {
+            mode = ThermalModes::Gmode;
+        } else {
+            LOG_S(WARNING) << "未知模式：" << name;
+            return;
+        }
+        m_thermals->setThermalMode(mode);
+        return;
+    }
+    LOG_S(WARNING) << "未知动作：" << action;
+}
+
+// keybind-list / keybind-set 走这里，不经过白名单 + popen 那条通用路径：
+// 它们是我们自己解析的结构化命令，没有理由让它们能拼出任意 shell。
+std::string Daemon::m_HandleKeyBindCommand(const std::string &cmd) {
+    if (cmd == "keybind-list") {
+        std::string out;
+        for (const auto &[scan, bind] : m_keyBinds.Items()) {
+            const char *label = KeyBinds::KeyLabel(scan);
+            out += std::to_string(scan) + " " + bind.action;
+            if (label != nullptr) {
+                out += " # " + std::string(label);
+            }
+            out += "\n";
+        }
+        return out;
+    }
+    if (cmd.rfind("keybind-set ", 0) == 0) {
+        std::istringstream ss(cmd.substr(std::string("keybind-set ").size()));
+        int scan = 0;
+        std::string action;
+        if (!(ss >> scan >> action)) {
+            return "error: 用法 keybind-set <扫描码> <动作>\n";
+        }
+        if (!KeyBinds::ValidAction(action)) {
+            return "error: 未知动作 " + action + "\n";
+        }
+        if (scan <= 0) {
+            return "error: 扫描码必须是正整数\n";
+        }
+        if (!m_keyBinds.Set(scan, action)) {
+            return "error: 设置失败\n";
+        }
+        if (!m_keyBinds.Save(m_keyBindPath)) {
+            return "error: 写入 " + m_keyBindPath + " 失败\n";
+        }
+        if (m_binder != nullptr) {
+            m_binder->setBinds(&m_keyBinds); // 立即生效，不必重启 daemon
+        }
+        return "ok\n";
+    }
+    return "error: 未知命令\n";
+}
+
 bool Daemon::m_CommandAllowed(const std::string &cmd) {
     // Allowed command patterns (expand as needed)
     if (cmd == "stop")

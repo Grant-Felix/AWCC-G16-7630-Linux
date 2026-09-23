@@ -44,9 +44,6 @@ KeyBinder::~KeyBinder() {
         close(fd_);
 }
 
-void KeyBinder::setOnGModeKey(Callback cb) { m_onGmodeKey = std::move(cb); }
-void KeyBinder::setOnLightKey(Callback cb) { m_onLightKey = std::move(cb); }
-
 void KeyBinder::run() {
     if (dev_ == nullptr)
         return;
@@ -69,15 +66,11 @@ void KeyBinder::run() {
                 m_lastTriggered[code] = now;
             }
 
-            if (should_fire) {
-                // LOG_S(INFO) << "Received EV_MSC code: " << code;
-                if (code == 104 && m_onGmodeKey) {
-                    // LOG_S(INFO) << "Triggering G-Mode callback";
-                    m_onGmodeKey();
-                } else if (code == 105 && m_onLightKey) {
-                    // LOG_S(INFO) << "Triggering Light key callback";
-                    m_onLightKey();
-                }
+            // 只回调「表里绑定了动作」的扫描码：所有按键都会发 EV_MSC，不筛的话
+            // 每次敲键盘都要惊动 daemon 一次
+            if (should_fire && m_binds != nullptr && m_binds->Bound(code) &&
+                m_binds->ActionFor(code) != "none" && m_onScan) {
+                m_onScan(code);
             }
         } else if (rc == -EAGAIN) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));

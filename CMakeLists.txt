@@ -124,7 +124,11 @@ include(ExternalProject)
 ExternalProject_Add(
   libevdev
   GIT_REPOSITORY https://gitlab.freedesktop.org/libevdev/libevdev.git
-  GIT_TAG master
+  # 钉到具体提交，并关掉「configure 时去上游核对更新」：一是构建不该依赖上游随时可达
+  # （实测 gitlab.freedesktop.org 会回 500 把 configure 打断），二是 GIT_TAG master
+  # 意味着每次构建拉到的代码都可能不同，不可复现。
+  GIT_TAG b4d411a1d629d6dfdbd183d8e28cd8d35ebea25e
+  UPDATE_DISCONNECTED 1
   CONFIGURE_COMMAND
     meson setup <BINARY_DIR> <SOURCE_DIR> --default-library=static
     -Ddocumentation=disabled -Dtests=disabled -Dtools=disabled

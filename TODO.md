@@ -85,6 +85,17 @@ ALIENFX · 灯效（加持续时间和取色）、设置 · 关于（机型 / �
 | --- | --- |
 | `./build/awcc --ui-selftest \| grep "mode "` | 打印 `mode sync: 15 个按钮 / 3 组 -> 所有组状态一致` 与 `mode click: 在第一组点「G 模式」-> 另外 2 组同步`；把 `applyMode()` 里的 `syncModeButtons()` 去掉后必须变成「未同步」（负例已实跑确认会失败） |
 
+**议题 #2 第一段（后端）已落地（2026-09-23）**：绑定表 `include/KeyBinds.h` + `src/KeyBinds.cpp`
+（主键是**实测的 EV_MSC 扫描码**：G 模式键 104、F2～F6 = 146～150，其中 F4/F6 只发扫描码、没有
+EV_KEY），daemon 侧改成配置驱动（`/etc/awcc/keybinds.conf`，不存在就用出厂默认），套接字加了
+`keybind-list` / `keybind-set <扫描码> <动作>` 两条**自己解析**的命令（不走白名单+popen 那条路）。
+动作先用现成的：`gmode-toggle`、`brightness-cycle`、`mode:{battery,cool,quiet,balanced,performance,gmode}`；
+自定义命令要等白名单方案，暂不提供。界面上的「按键绑定」页仍是占位，是下一段。
+
+| 验证命令 | 完成判据 |
+| --- | --- |
+| `LOGURU=$(find build -name libloguru.a \| head -1); g++ -std=c++23 -Iinclude -Ibuild/_deps/loguru-src -DLOGURU_WITH_STREAMS=1 tests/keybinds_test.cpp src/KeyBinds.cpp "$LOGURU" -o /tmp/kbt && /tmp/kbt` | 17 项检查全部通过，末行「全部通过」 |
+
 **还没做、但会立刻被察觉的一条**：配置持久化（`$XDG_CONFIG_HOME/awcc/config.ini`）尚未实现——
 现在改过的亮度 / 模式 / 灯效重启后不会记住（`EffectController` 仍写 root 所有的
 `/etc/awcc/brightness`，就是原计划要修掉的那个坑）。这是下一步的优先项。
