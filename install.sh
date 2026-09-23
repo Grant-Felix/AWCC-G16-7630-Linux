@@ -30,28 +30,58 @@ readonly INSTALL_ROOT="${AWCC_INSTALL_ROOT:-}"
 readonly MANIFEST="${INSTALL_ROOT}/var/lib/awcc/installed-files.list"
 readonly CONFIG_DIR="${INSTALL_ROOT}/etc/awcc"
 
-# ── 输出 ────────────────────────────────────────────────────────────────────
-info() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-ok()   { printf '\033[1;32m  ✓\033[0m %s\n' "$*"; }
-warn() { printf '\033[1;33m  !\033[0m %s\n' "$*"; }
-err()  { printf '\033[1;31m  ✗\033[0m %s\n' "$*" >&2; }
+# ── 外观 ────────────────────────────────────────────────────────────────────
+# 只在真正往终端写的时候上色：重定向到文件/管道时自动关掉，日志才干净
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+    C_RESET=$'\033[0m'; C_DIM=$'\033[2m'; C_BOLD=$'\033[1m'
+    C_TITLE=$'\033[1;36m'; C_OK=$'\033[1;32m'; C_WARN=$'\033[1;33m'
+    C_ERR=$'\033[1;31m'; C_KEY=$'\033[1;35m'
+else
+    C_RESET=; C_DIM=; C_BOLD=; C_TITLE=; C_OK=; C_WARN=; C_ERR=; C_KEY=
+fi
 
-# 数字菜单：用户回什么就是什么，空回车取默认项
-# 用法：choose "问题" 默认序号 "选项1" "选项2" ...
+# 终端宽度，夹在 62~96 之间：太窄的窗口不至于折行，太宽也不至于空荡
+ui_width() {
+    local w
+    w="$(tput cols 2>/dev/null || echo 80)"
+    [ "$w" -lt 62 ] && w=62
+    [ "$w" -gt 96 ] && w=96
+    printf '%s' "$w"
+}
+
+# 分隔线：用终端宽度（locale 无关），夹在 56~88 之间
+rule() {
+    local w
+    w="$(tput cols 2>/dev/null || echo 72)"
+    [ "$w" -lt 48 ] && w=48
+    [ "$w" -gt 88 ] && w=88
+    printf '  %s%s%s\n' "$C_DIM" "$(printf '─%.0s' $(seq 1 "$((w - 4))"))" "$C_RESET"
+}
+
+# 说明：这里**不画右边框**——右边框要求精确算中文的显示宽度，而 ${#s} 与切片在不同 locale 下
+# 是按字符还是按字节并不一致（实测 LC_ALL=C 时一个中文字被当成 3 个字符，框就歪了）。
+# 只画横向分隔线就不需要任何宽度计算，任何终端/语言环境都不会歪。
+info() { printf '%s  ⟶%s %s\n' "$C_TITLE" "$C_RESET" "$*"; }
+ok()   { printf '%s  ✓%s %s\n' "$C_OK" "$C_RESET" "$*"; }
+warn() { printf '%s  !%s %s\n' "$C_WARN" "$C_RESET" "$*"; }
+err()  { printf '%s  ✗%s %s\n' "$C_ERR" "$C_RESET" "$*" >&2; }
+
+# 数字菜单：只认数字 + 回车（本机终端对方向键支持不佳，早前踩过）
 choose() {
     local question="$1" def="$2"; shift 2
     local -a items=("$@")
-    printf '\n%s\n' "$question"
+    printf '\n   %s%s%s\n\n' "$C_BOLD" "$question" "$C_RESET"
     local i=1
     for it in "${items[@]}"; do
         if [ "$i" -eq "$def" ]; then
-            printf '  %d) %s  \033[2m(默认)\033[0m\n' "$i" "$it"
+            printf '    %s%s%s  %s   %s★ 默认%s\n' "$C_KEY" "$i" "$C_RESET" "$it" "$C_DIM" "$C_RESET"
         else
-            printf '  %d) %s\n' "$i" "$it"
+            printf '    %s%s%s  %s\n' "$C_KEY" "$i" "$C_RESET" "$it"
         fi
         i=$((i + 1))
     done
-    printf '请输入序号 [%s]: ' "$def"
+    printf '\n   %s数字 + 回车；直接回车取默认项%s\n' "$C_DIM" "$C_RESET"
+    printf '   %s›%s ' "$C_TITLE" "$C_RESET"
     local answer=""
     read -r answer || true
     [ -z "$answer" ] && answer="$def"
@@ -63,40 +93,10 @@ choose() {
 }
 
 confirm() {
-    printf '%s [y/N]: ' "$1"
+    printf '  %s?%s %s %s[y/N]%s ' "$C_WARN" "$C_RESET" "$1" "$C_DIM" "$C_RESET"
     local a=""
     read -r a || true
     case "$a" in [yY]|[yY][eE][sS]) return 0 ;; *) return 1 ;; esac
-}
-
-need_root_prefix() {
-    [ -n "$INSTALL_ROOT" ] && return 0   # 装到别处时不需要 sudo
-    return 1
-}
-
-# ── 依赖 ────────────────────────────────────────────────────────────────────
-detect_distro() {
-    if [ -r /etc/os-release ]; then
-        # shellcheck disable=SC1091
-        . /etc/os-release
-        case "${ID:-}${ID_LIKE:-}" in
-            *arch*) echo arch ;;
-            *debian*|*ubuntu*) echo debian ;;
-            *fedora*|*rhel*|*centos*) echo fedora ;;
-            *) echo unknown ;;
-        esac
-    else
-        echo unknown
-    fi
-}
-
-dep_install_hint() {
-    case "$(detect_distro)" in
-        arch)   echo "sudo pacman -S --needed base-devel cmake ninja meson git pkgconf gtk4 libadwaita systemd-libs" ;;
-        debian) echo "sudo apt install build-essential cmake ninja-build meson git pkg-config libgtk-4-dev libadwaita-1-dev libudev-dev" ;;
-        fedora) echo "sudo dnf install @development-tools cmake ninja-build meson git pkgconf-pkg-config gtk4-devel libadwaita-devel systemd-devel" ;;
-        *)      echo "请自行安装：cmake ninja meson git pkg-config、GTK4 与 libadwaita 的开发包、libudev 头文件" ;;
-    esac
 }
 
 # 检查结果放全局，供菜单里展示与安装前拦截
@@ -481,36 +481,41 @@ do_uninstall() {
 }
 
 # ── 菜单 ────────────────────────────────────────────────────────────────────
-status_line() {
-    local bin="${INSTALL_ROOT}/usr/bin/awcc"
-    if [ -x "$bin" ]; then
-        printf '  已安装：%s\n' "$("$bin" -h 2>/dev/null | head -1)"
-    else
-        printf '  当前未安装（%s 不存在）\n' "$bin"
+ui_header() {
+    local ver="${C_DIM}未安装${C_RESET}" state=""
+    if [ -x "${INSTALL_ROOT}/usr/bin/awcc" ]; then
+        ver="$("${INSTALL_ROOT}/usr/bin/awcc" -h 2>/dev/null | head -1 | sed 's/Alienware Command Center //')"
     fi
-    if [ -z "$INSTALL_ROOT" ] && command -v systemctl >/dev/null 2>&1; then
-        printf '  守护进程 %s：%s\n' "$SERVICE" "$(systemctl is-active "$SERVICE" 2>/dev/null | head -1 || echo unknown)"
+    if [ -n "$INSTALL_ROOT" ]; then
+        state="  ${C_DIM}·${C_RESET} 安装根 ${INSTALL_ROOT}"
+    elif command -v systemctl >/dev/null 2>&1; then
+        state="  ${C_DIM}·${C_RESET} 守护进程 $(systemctl is-active "$SERVICE" 2>/dev/null | head -1 || echo unknown)"
     fi
-    [ -n "$INSTALL_ROOT" ] && printf '  安装根目录（测试用）：%s\n' "$INSTALL_ROOT"
+    rule
+    printf '   %sAWCC%s  ·  Dell G16 7630 Linux 适配版\n' "$C_TITLE" "$C_RESET"
+    rule
+    printf '   %s源码%s  %s\n' "$C_DIM" "$C_RESET" "$SELF_DIR"
+    printf '   %s状态%s  %s%s\n' "$C_DIM" "$C_RESET" "$ver" "$state"
+    rule
 }
 
 menu() {
     while true; do
-        printf '\n\033[1mAWCC-G16-7630-Linux 安装脚本\033[0m\n'
-        printf '  源码目录：%s\n' "$SELF_DIR"
-        status_line
-        choose "请选择操作：" 1 \
+        printf '\n'
+        ui_header
+        choose "请选择操作" 1 \
             "构建并安装" \
             "只构建（不安装）" \
             "检查依赖" \
             "卸载" \
             "退出"
+        printf '\n'
         case "$REPLY" in
             1) do_build && do_install ;;
             2) do_build ;;
             3) check_deps ;;
             4) do_uninstall ;;
-            5) return 0 ;;
+            5) printf '  %s再见%s\n\n' "$C_DIM" "$C_RESET"; return 0 ;;
         esac
     done
 }
