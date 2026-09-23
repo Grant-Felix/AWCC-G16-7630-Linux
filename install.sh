@@ -133,7 +133,89 @@ check_deps() {
         printf '\n缺这些，按发行版可以这样装：\n  %s\n' "$(dep_install_hint)"
         return 1
     fi
-    ok "依赖齐全"
+    ok "构建依赖齐全"
+    check_runtime_deps || true
+    DEPS_MISSING=()
+    return 0
+}
+
+# ── 运行时依赖 ──────────────────────────────────────────────────────────────
+# acpi_call 是热模式 / 风扇控制的前提（daemon 往 /proc/acpi/call 写 ACPI 命令）。
+# 发行版包当年是靠 depends 声明让包管理器处理的，脚本安装得自己管——而且要分两种情况：
+# 模块文件在不在（重启后还能不能用）、以及当前内核是否恰好还加载着它。
+readonly DEP_MARKER="${INSTALL_ROOT}/var/lib/awcc/installed-deps"
+
+acpi_module_present() { modinfo acpi_call >/dev/null 2>&1; }
+acpi_currently_loaded() { [ -e /proc/acpi/call ]; }
+
+acpi_install_hint() {
+    case "$(detect_distro)" in
+        arch)   echo "sudo pacman -S --needed acpi_call-dkms   # 多内核都用的话还需要各内核的 -headers；也可按内核装 acpi_call / acpi_call-lts" ;;
+        debian) echo "sudo apt install acpi-call-dkms" ;;
+        fedora) echo "acpi_call 在 RPM Fusion 里：sudo dnf install akmod-acpi_call（先启用 rpmfusion-free）" ;;
+        *)      echo "请自行安装 acpi_call 内核模块（DKMS 包名多为 acpi-call-dkms）" ;;
+    esac
+}
+
+check_runtime_deps() {
+    info "检查运行时依赖"
+    local missing=0
+    if acpi_module_present; then
+        ok "acpi_call 内核模块（热模式 / 风扇控制）"
+    elif acpi_currently_loaded; then
+        # 本机实测状态：模块文件已被移除（例如 pacman -Rns 连带卸掉了 acpi_call-dkms），
+        # 但当前内核还加载着它，所以现在能用、重启后就没了
+        warn "acpi_call 模块文件已不在，只是当前内核还加载着 /proc/acpi/call —— **重启后会失效**"
+        printf '   装回来：%s\n' "$(acpi_install_hint)"
+        missing=1
+    else
+        err "缺少 acpi_call 内核模块（热模式 / 风扇控制用不了）"
+        printf '   装它：%s\n' "$(acpi_install_hint)"
+        missing=1
+    fi
+    if [ "$missing" -eq 0 ]; then
+        ok "运行时依赖齐全"
+        return 0
+    fi
+    return 1
+}
+
+install_runtime_deps() {
+    acpi_module_present && return 0
+    warn "热模式与风扇控制依赖 acpi_call 内核模块，它现在不可用"
+    if ! confirm "现在按上面的命令安装它吗？"; then
+        warn "跳过：界面能用，但热模式 / 风扇控制会失败"
+        return 0
+    fi
+    case "$(detect_distro)" in
+        arch)
+            if $SUDO pacman -S --needed --noconfirm acpi_call-dkms; then
+                ok "已安装 acpi_call-dkms"
+            else
+                err "安装失败，请手动装（多内核注意装各内核的 headers）"
+                return 1
+            fi
+            ;;
+        debian)
+            $SUDO apt install -y acpi-call-dkms || { err "安装失败"; return 1; }
+            ;;
+        fedora)
+            $SUDO dnf install -y akmod-acpi_call || { err "安装失败（acpi_call 在 RPM Fusion 里）"; return 1; }
+            ;;
+        *)
+            err "不认识这个发行版，请手动装 acpi_call，再重跑本脚本"
+            return 1
+            ;;
+    esac
+    # 记一笔：卸载时只删「我们装的」依赖，不动用户原本就有的
+    if [ -n "$SUDO" ]; then
+        $SUDO install -d "$(dirname "$DEP_MARKER")"
+        echo "acpi_call-dkms" | $SUDO tee "$DEP_MARKER" >/dev/null
+    else
+        mkdir -p "$(dirname "$DEP_MARKER")"
+        echo "acpi_call-dkms" >"$DEP_MARKER"
+    fi
+    ok "已记录（卸载时会问你是否一并移除）"
     return 0
 }
 
@@ -207,6 +289,8 @@ do_install() {
         handle_upstream_conflict || return 1
     fi
 
+    install_runtime_deps || return 1
+
     # 先装到暂存目录：这样能得到**准确的文件清单**（卸载就靠它，不用去猜）
     local stage
     stage="$(mktemp -d)"
@@ -219,6 +303,13 @@ do_install() {
     local count
     count="$(cd "$stage" && find . -type f | wc -l)"
     ok "共 $count 个文件"
+
+    # 已有配置先留个备份：包管理器遇到改动过的配置会写 .pacnew，我们不覆盖用户的手改
+    local db="${INSTALL_ROOT}/etc/awcc/database.json"
+    if [ -e "$db" ]; then
+        warn "已存在 $db，先备份为 database.json.bak"
+        if [ -n "$SUDO" ]; then $SUDO cp -a "$db" "$db.bak"; else cp -a "$db" "$db.bak"; fi
+    fi
 
     info "复制到 ${INSTALL_ROOT:-/}"
     if [ -n "$SUDO" ]; then
@@ -249,6 +340,11 @@ do_install() {
         else
             warn "稍后可手动：sudo systemctl enable --now $SERVICE"
         fi
+        # 这两条是 pacman 的钩子会自动做的，脚本安装得自己来，否则菜单里可能看不到图标
+        command -v gtk-update-icon-cache >/dev/null 2>&1 && \
+            sudo gtk-update-icon-cache -q -t -f /usr/share/icons 2>/dev/null || true
+        command -v update-desktop-database >/dev/null 2>&1 && \
+            sudo update-desktop-database -q /usr/share/applications 2>/dev/null || true
     else
         warn "装到了 $INSTALL_ROOT（测试用），跳过 systemd / udev 操作"
     fi
@@ -322,6 +418,23 @@ do_uninstall() {
         rm -f "$manifest"
     fi
 
+    # 运行时依赖：只删我们装的那份（安装时记在 DEP_MARKER 里），且走包管理器，
+    # 这样 DKMS 模块移除与 initramfs 重建等钩子才会像当年 pacman -Rns 那样自动跑
+    if [ -r "$DEP_MARKER" ] && [ -z "$INSTALL_ROOT" ]; then
+        local dep
+        dep="$(cat "$DEP_MARKER")"
+        warn "acpi_call 内核模块是安装时由本脚本装的（$dep）"
+        if confirm "一并移除 $dep 吗？（其它软件可能也要用它）"; then
+            case "$(detect_distro)" in
+                arch)   sudo pacman -R --noconfirm "$dep" && ok "已移除 $dep" ;;
+                debian) sudo apt remove -y "$dep" && ok "已移除 $dep" ;;
+                fedora) sudo dnf remove -y akmod-acpi_call && ok "已移除" ;;
+                *)      warn "请手动移除" ;;
+            esac
+        fi
+        [ -n "$SUDO" ] && $SUDO rm -f "$DEP_MARKER" || rm -f "$DEP_MARKER"
+    fi
+
     if [ -z "$INSTALL_ROOT" ]; then
         info "刷新 udev 与 systemd"
         sudo udevadm control --reload 2>/dev/null || true
@@ -341,7 +454,7 @@ status_line() {
         printf '  当前未安装（%s 不存在）\n' "$bin"
     fi
     if [ -z "$INSTALL_ROOT" ] && command -v systemctl >/dev/null 2>&1; then
-        printf '  守护进程 %s：%s\n' "$SERVICE" "$(systemctl is-active "$SERVICE" 2>/dev/null || echo unknown)"
+        printf '  守护进程 %s：%s\n' "$SERVICE" "$(systemctl is-active "$SERVICE" 2>/dev/null | head -1 || echo unknown)"
     fi
     [ -n "$INSTALL_ROOT" ] && printf '  安装根目录（测试用）：%s\n' "$INSTALL_ROOT"
 }
