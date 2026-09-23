@@ -5,7 +5,7 @@
 # 注意版本号映射：Arch 的 pkgver 不允许含连字符，所以上游的 "26.9.22-2" 在这里写成
 # "26.9.22_2"。发布新版时两处都要改：pkgver 与下面 source 里的标签。
 pkgname=awcc-g16-7630-linux
-pkgver=26.9.22_3
+pkgver=26.9.23_1
 pkgrel=1
 pkgdesc="Alienware Command Center for the Dell G16 7630 (GTK4 frontend, fork of tr1xem/AWCC)"
 arch=('x86_64')
