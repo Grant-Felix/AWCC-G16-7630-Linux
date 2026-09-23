@@ -477,8 +477,19 @@ std::string Daemon::executeFromDaemon(const char *command) {
             LOG_S(ERROR) << "Rejected command: " << command;
             return "Rejected command";
         }
-        LOG_S(INFO) << "Executing command: " << command;
-        FILE *fp = popen(command, "r");
+        // 以 root 运行的 daemon 不需要 pkexec：实测在 daemon 里 pkexec 会失败
+        // （Error checking for authorization org.freedesktop.policykit.exec:
+        //   org.freedesktop.PolicyKit1.Error.Failed: Process not found），
+        // 于是热模式 / 风扇 boost / 睿频这些 ACPI 写全部无声失效。
+        // 白名单已经按**原命令**校验过，这里只是把 pkexec 外壳剥掉、以 root 直接执行。
+        std::string toRun = command;
+        if (geteuid() == 0 && toRun.rfind("pkexec ", 0) == 0) {
+            toRun = toRun.substr(std::string("pkexec ").size());
+            LOG_S(INFO) << "以 root 直接执行（已去掉 pkexec）：" << toRun;
+        } else {
+            LOG_S(INFO) << "Executing command: " << toRun;
+        }
+        FILE *fp = popen(toRun.c_str(), "r");
         std::string result;
         if (fp == nullptr) {
             result = "Failed to execute command";
