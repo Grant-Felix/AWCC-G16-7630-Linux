@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: awcc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-22 13:49+0800\n"
+"POT-Creation-Date: 2026-09-23 08:35+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,558 +17,594 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/ui/Ui.cpp:346
+#: src/ui/Ui.cpp:378
 msgid "Battery saver"
 msgstr ""
 
-#: src/ui/Ui.cpp:347
+#: src/ui/Ui.cpp:379
 msgid "Cool"
 msgstr ""
 
-#: src/ui/Ui.cpp:348
+#: src/ui/Ui.cpp:380
 msgid "Quiet"
 msgstr ""
 
-#: src/ui/Ui.cpp:349
+#: src/ui/Ui.cpp:381
 msgid "Balanced"
 msgstr ""
 
-#: src/ui/Ui.cpp:350 src/ui/Ui.cpp:1160 src/ui/Ui.cpp:1353 src/ui/Ui.cpp:1364
+#: src/ui/Ui.cpp:382 src/ui/Ui.cpp:1426 src/ui/Ui.cpp:1746 src/ui/Ui.cpp:1757
 #: src/ui/awcc.ui:74
 msgid "Performance"
 msgstr ""
 
-#: src/ui/Ui.cpp:351
+#: src/ui/Ui.cpp:383
 msgid "G mode"
 msgstr ""
 
-#: src/ui/Ui.cpp:430
+#: src/ui/Ui.cpp:534
+msgid "Do nothing"
+msgstr ""
+
+#: src/ui/Ui.cpp:537
+msgid "Toggle G mode"
+msgstr ""
+
+#: src/ui/Ui.cpp:540
+msgid "Cycle brightness"
+msgstr ""
+
+#: src/ui/Ui.cpp:688
 msgid "Static"
 msgstr ""
 
-#: src/ui/Ui.cpp:430
+#: src/ui/Ui.cpp:688
 msgid "Breathe"
 msgstr ""
 
-#: src/ui/Ui.cpp:431
+#: src/ui/Ui.cpp:689
 msgid "Spectrum"
 msgstr ""
 
-#: src/ui/Ui.cpp:431
+#: src/ui/Ui.cpp:689
 msgid "Wave"
 msgstr ""
 
-#: src/ui/Ui.cpp:432
+#: src/ui/Ui.cpp:690
 msgid "Rainbow"
 msgstr ""
 
-#: src/ui/Ui.cpp:432
+#: src/ui/Ui.cpp:690
 msgid "Back and forth"
 msgstr ""
 
-#: src/ui/Ui.cpp:433
+#: src/ui/Ui.cpp:691
 msgid "Default blue"
 msgstr ""
 
-#: src/ui/Ui.cpp:459
+#: src/ui/Ui.cpp:717
 msgid "Keyboard lighting"
 msgstr ""
 
-#: src/ui/Ui.cpp:459 src/ui/Ui.cpp:557
+#: src/ui/Ui.cpp:717 src/ui/Ui.cpp:818
 msgid "Applies immediately"
 msgstr ""
 
-#: src/ui/Ui.cpp:478 src/ui/Ui.cpp:1067
+#: src/ui/Ui.cpp:736 src/ui/Ui.cpp:1333
 msgid "Color"
 msgstr ""
 
-#: src/ui/Ui.cpp:512
+#: src/ui/Ui.cpp:773
 msgid "Brightness"
 msgstr ""
 
-#: src/ui/Ui.cpp:539
+#: src/ui/Ui.cpp:800
 msgid "Duration"
 msgstr ""
 
-#: src/ui/Ui.cpp:557
+#: src/ui/Ui.cpp:818
 msgid "Fan and turbo"
 msgstr ""
 
-#: src/ui/Ui.cpp:589
+#: src/ui/Ui.cpp:850
 msgid "CPU fan"
 msgstr ""
 
-#: src/ui/Ui.cpp:610
+#: src/ui/Ui.cpp:871
 msgid "GPU fan"
 msgstr ""
 
-#: src/ui/Ui.cpp:612
+#: src/ui/Ui.cpp:873 src/ui/Ui.cpp:1596
 msgid "Not available on this model"
 msgstr ""
 
-#: src/ui/Ui.cpp:617 src/ui/Ui.cpp:641
+#: src/ui/Ui.cpp:878 src/ui/Ui.cpp:902
 msgid "Turbo boost"
 msgstr ""
 
-#: src/ui/Ui.cpp:639
+#: src/ui/Ui.cpp:900
 msgid "Fan boost"
 msgstr ""
 
-#: src/ui/Ui.cpp:640
+#: src/ui/Ui.cpp:901
 msgid "Thermal modes"
 msgstr ""
 
-#: src/ui/Ui.cpp:642
+#: src/ui/Ui.cpp:903
 msgid "CPU temperature"
 msgstr ""
 
-#: src/ui/Ui.cpp:643
+#: src/ui/Ui.cpp:904
 msgid "GPU temperature"
 msgstr ""
 
-#: src/ui/Ui.cpp:644
+#: src/ui/Ui.cpp:905
 msgid "Brightness control"
 msgstr ""
 
-#: src/ui/Ui.cpp:645
+#: src/ui/Ui.cpp:906
 msgid "G mode toggle"
 msgstr ""
 
-#: src/ui/Ui.cpp:671 src/ui/Ui.cpp:1120
+#: src/ui/Ui.cpp:933 src/ui/Ui.cpp:1386
 msgid "Device"
 msgstr ""
 
-#: src/ui/Ui.cpp:672
+#: src/ui/Ui.cpp:934
 msgid "Model"
 msgstr ""
 
-#: src/ui/Ui.cpp:674
+#: src/ui/Ui.cpp:936
 msgid "Version"
 msgstr ""
 
-#: src/ui/Ui.cpp:676
+#: src/ui/Ui.cpp:938
 msgid "Keyboard zones"
 msgstr ""
 
-#: src/ui/Ui.cpp:679
+#: src/ui/Ui.cpp:944
 msgid "Current mode"
 msgstr ""
 
-#: src/ui/Ui.cpp:682
+#: src/ui/Ui.cpp:948
 msgid "Daemon"
 msgstr ""
 
-#: src/ui/Ui.cpp:683
+#: src/ui/Ui.cpp:949
 msgid "running (socket)"
 msgstr ""
 
-#: src/ui/Ui.cpp:683
+#: src/ui/Ui.cpp:949
 msgid "not running (pkexec fallback)"
 msgstr ""
 
-#: src/ui/Ui.cpp:698
+#: src/ui/Ui.cpp:964
 msgid "Features"
 msgstr ""
 
-#: src/ui/Ui.cpp:730 src/ui/Ui.cpp:1127 src/ui/Ui.cpp:1182 src/ui/Ui.cpp:1245
-#: src/ui/Ui.cpp:1276 src/ui/Ui.cpp:1289 src/ui/Ui.cpp:1308
+#: src/ui/Ui.cpp:996 src/ui/Ui.cpp:1393 src/ui/Ui.cpp:1448 src/ui/Ui.cpp:1511
+#: src/ui/Ui.cpp:1542 src/ui/Ui.cpp:1555
 msgid "Under construction"
 msgstr ""
 
-#: src/ui/Ui.cpp:937
+#: src/ui/Ui.cpp:1203
 msgid "(none)"
 msgstr ""
 
-#: src/ui/Ui.cpp:955
+#: src/ui/Ui.cpp:1221
 msgid "Pure black"
 msgstr ""
 
-#: src/ui/Ui.cpp:955
+#: src/ui/Ui.cpp:1221
 msgid "Default"
 msgstr ""
 
-#: src/ui/Ui.cpp:956
+#: src/ui/Ui.cpp:1222
 msgid "Follow system"
 msgstr ""
 
-#: src/ui/Ui.cpp:957
+#: src/ui/Ui.cpp:1223
 msgid "Official glow"
 msgstr ""
 
-#: src/ui/Ui.cpp:958
+#: src/ui/Ui.cpp:1224
 msgid "Custom color"
 msgstr ""
 
-#: src/ui/Ui.cpp:959 src/ui/Ui.cpp:1081
+#: src/ui/Ui.cpp:1225 src/ui/Ui.cpp:1347
 msgid "Image"
 msgstr ""
 
-#: src/ui/Ui.cpp:1014
+#: src/ui/Ui.cpp:1280
 msgid "Choose background image"
 msgstr ""
 
-#: src/ui/Ui.cpp:1016
+#: src/ui/Ui.cpp:1282
 msgid "Images"
 msgstr ""
 
-#: src/ui/Ui.cpp:1041
+#: src/ui/Ui.cpp:1307
 msgid "Background"
 msgstr ""
 
-#: src/ui/Ui.cpp:1041
+#: src/ui/Ui.cpp:1307
 msgid "Saved to the user config file"
 msgstr ""
 
-#: src/ui/Ui.cpp:1082
+#: src/ui/Ui.cpp:1348
 msgid "Choose image…"
 msgstr ""
 
-#: src/ui/Ui.cpp:1095
+#: src/ui/Ui.cpp:1361
 msgid "Reset to default"
 msgstr ""
 
-#: src/ui/Ui.cpp:1102
+#: src/ui/Ui.cpp:1368
 msgid "Config file"
 msgstr ""
 
-#: src/ui/Ui.cpp:1129
+#: src/ui/Ui.cpp:1395
 msgid "Official here is a laptop render; we have no such asset yet."
 msgstr ""
 
-#: src/ui/Ui.cpp:1137 src/ui/Ui.cpp:1320
+#: src/ui/Ui.cpp:1403 src/ui/Ui.cpp:1713
 msgid "Overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1146 src/ui/Ui.cpp:1215 src/ui/Ui.cpp:1265
+#: src/ui/Ui.cpp:1412 src/ui/Ui.cpp:1481 src/ui/Ui.cpp:1531
 msgid "CPU"
 msgstr ""
 
-#: src/ui/Ui.cpp:1146 src/ui/Ui.cpp:1147 src/ui/Ui.cpp:1216 src/ui/Ui.cpp:1217
+#: src/ui/Ui.cpp:1412 src/ui/Ui.cpp:1413 src/ui/Ui.cpp:1482 src/ui/Ui.cpp:1483
 msgid "Utilization"
 msgstr ""
 
-#: src/ui/Ui.cpp:1147 src/ui/Ui.cpp:1217 src/ui/Ui.cpp:1268
+#: src/ui/Ui.cpp:1413 src/ui/Ui.cpp:1483 src/ui/Ui.cpp:1534
 msgid "GPU"
 msgstr ""
 
-#: src/ui/Ui.cpp:1148 src/ui/Ui.cpp:1219
+#: src/ui/Ui.cpp:1414 src/ui/Ui.cpp:1485
 msgid "Memory"
 msgstr ""
 
-#: src/ui/Ui.cpp:1148 src/ui/Ui.cpp:1219
+#: src/ui/Ui.cpp:1414 src/ui/Ui.cpp:1485
 msgid "Usage"
 msgstr ""
 
-#: src/ui/Ui.cpp:1149 src/ui/Ui.cpp:1221
+#: src/ui/Ui.cpp:1415 src/ui/Ui.cpp:1487
 msgid "C: disk"
 msgstr ""
 
-#: src/ui/Ui.cpp:1149 src/ui/Ui.cpp:1221
+#: src/ui/Ui.cpp:1415 src/ui/Ui.cpp:1487
 msgid "Free space"
 msgstr ""
 
-#: src/ui/Ui.cpp:1160 src/ui/Ui.cpp:1324
+#: src/ui/Ui.cpp:1426 src/ui/Ui.cpp:1717
 msgid "Thermal"
 msgstr ""
 
-#: src/ui/Ui.cpp:1169
+#: src/ui/Ui.cpp:1435
 msgid "Game library"
 msgstr ""
 
-#: src/ui/Ui.cpp:1173
+#: src/ui/Ui.cpp:1439
 msgid "New"
 msgstr ""
 
-#: src/ui/Ui.cpp:1173
+#: src/ui/Ui.cpp:1439
 msgid "Recent"
 msgstr ""
 
-#: src/ui/Ui.cpp:1173
+#: src/ui/Ui.cpp:1439
 msgid "Favorites"
 msgstr ""
 
-#: src/ui/Ui.cpp:1173
+#: src/ui/Ui.cpp:1439
 msgid "Most played"
 msgstr ""
 
-#: src/ui/Ui.cpp:1184
+#: src/ui/Ui.cpp:1450
 msgid "No game scanning source on Linux yet."
 msgstr ""
 
-#: src/ui/Ui.cpp:1198
+#: src/ui/Ui.cpp:1464
 msgid "Frequency (GHz)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1198 src/ui/Ui.cpp:1200 src/ui/Ui.cpp:1261 src/ui/Ui.cpp:1263
+#: src/ui/Ui.cpp:1464 src/ui/Ui.cpp:1466 src/ui/Ui.cpp:1527 src/ui/Ui.cpp:1529
 msgid "Temperature"
 msgstr ""
 
-#: src/ui/Ui.cpp:1198
+#: src/ui/Ui.cpp:1464
 msgid "Power (W)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1199
+#: src/ui/Ui.cpp:1465
 msgid "Voltage (V)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1200 src/ui/Ui.cpp:1201
+#: src/ui/Ui.cpp:1466 src/ui/Ui.cpp:1467
 msgid "Frequency (MHz)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1200
+#: src/ui/Ui.cpp:1466
 msgid "VRAM (MHz)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1201 src/ui/Ui.cpp:1203
+#: src/ui/Ui.cpp:1467 src/ui/Ui.cpp:1469
 msgid "Available (GB)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1202
+#: src/ui/Ui.cpp:1468
 msgid "Unpaged (GB)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1202
+#: src/ui/Ui.cpp:1468
 msgid "Cached (GB)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1203
+#: src/ui/Ui.cpp:1469
 msgid "Read (MB/s)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1203
+#: src/ui/Ui.cpp:1469
 msgid "Write (MB/s)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1204
+#: src/ui/Ui.cpp:1470
 msgid "Active time (%)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1215
+#: src/ui/Ui.cpp:1481
 msgid "CPU overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1217
+#: src/ui/Ui.cpp:1483
 msgid "GPU overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1219
+#: src/ui/Ui.cpp:1485
 msgid "Memory overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1221
+#: src/ui/Ui.cpp:1487
 msgid "Disk overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1247 src/ui/Ui.cpp:1278
+#: src/ui/Ui.cpp:1513 src/ui/Ui.cpp:1544
 msgid "Values arrive with the M1 telemetry layer."
 msgstr ""
 
-#: src/ui/Ui.cpp:1257
+#: src/ui/Ui.cpp:1523
 msgid "Temperatures and fan speed"
 msgstr ""
 
-#: src/ui/Ui.cpp:1261
+#: src/ui/Ui.cpp:1527
 msgid "CPU area"
 msgstr ""
 
-#: src/ui/Ui.cpp:1263
+#: src/ui/Ui.cpp:1529
 msgid "GPU area"
 msgstr ""
 
-#: src/ui/Ui.cpp:1265 src/ui/Ui.cpp:1268
+#: src/ui/Ui.cpp:1531 src/ui/Ui.cpp:1534
 msgid "Fan speed"
 msgstr ""
 
-#: src/ui/Ui.cpp:1287
+#: src/ui/Ui.cpp:1553
 msgid "Per-key editing"
 msgstr ""
 
-#: src/ui/Ui.cpp:1291
+#: src/ui/Ui.cpp:1557
 msgid "The keyboard layout view and per-key colors come later."
 msgstr ""
 
-#: src/ui/Ui.cpp:1306
+#: src/ui/Ui.cpp:1585
+msgid "Saved"
+msgstr ""
+
+#: src/ui/Ui.cpp:1585
+msgid "Failed"
+msgstr ""
+
+#: src/ui/Ui.cpp:1594 src/ui/Ui.cpp:1605
 msgid "Hotkeys"
 msgstr ""
 
-#: src/ui/Ui.cpp:1310
+#: src/ui/Ui.cpp:1598
 msgid ""
-"The daemon owns the G key / light key listener; showing and editing bindings "
-"needs EC support (unconfirmed)."
+"The daemon is not running, so bindings cannot be read or written. They live "
+"in /etc/awcc/keybinds.conf."
 msgstr ""
 
-#: src/ui/Ui.cpp:1320
+#: src/ui/Ui.cpp:1607
+msgid ""
+"Keys are matched by their EV_MSC scan code; on this model F4 and F6 send no "
+"keycode at all."
+msgstr ""
+
+#: src/ui/Ui.cpp:1611
+msgid ""
+"F2 sends KEY_MEDIA and F5 sends KEY_CAMERA, so the desktop may also react "
+"unless you unbind those shortcuts."
+msgstr ""
+
+#: src/ui/Ui.cpp:1631
+msgid "Could not read the binding table from the daemon."
+msgstr ""
+
+#: src/ui/Ui.cpp:1713
 msgid "Performance · Overview"
 msgstr ""
 
-#: src/ui/Ui.cpp:1321
+#: src/ui/Ui.cpp:1714
 msgid ""
 "CPU / memory / disk are readable (M1 telemetry); GPU is unavailable while "
 "the dGPU is runtime-suspended"
 msgstr ""
 
-#: src/ui/Ui.cpp:1324
+#: src/ui/Ui.cpp:1717
 msgid "Performance · Thermal"
 msgstr ""
 
-#: src/ui/Ui.cpp:1325
+#: src/ui/Ui.cpp:1718
 msgid "CPU / GPU temperatures and fan RPM are readable (M1 telemetry)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1330
+#: src/ui/Ui.cpp:1723
 msgid "Lighting"
 msgstr ""
 
-#: src/ui/Ui.cpp:1330
+#: src/ui/Ui.cpp:1723
 msgid "ALIENFX™ · Lighting"
 msgstr ""
 
-#: src/ui/Ui.cpp:1331
+#: src/ui/Ui.cpp:1724
 msgid ""
 "The seven effects and brightness have working backends (wired up in M3); the "
 "color picker becomes GtkColorDialogButton"
 msgstr ""
 
-#: src/ui/Ui.cpp:1334
+#: src/ui/Ui.cpp:1727
 msgid "Key bindings"
 msgstr ""
 
-#: src/ui/Ui.cpp:1334
+#: src/ui/Ui.cpp:1727
 msgid "ALIENFX™ · Key bindings"
 msgstr ""
 
-#: src/ui/Ui.cpp:1335
+#: src/ui/Ui.cpp:1728
 msgid ""
 "Can only listen to the G key / light key; remapping needs EC support "
 "(unconfirmed)"
 msgstr ""
 
-#: src/ui/Ui.cpp:1341
+#: src/ui/Ui.cpp:1734
 msgid "About"
 msgstr ""
 
-#: src/ui/Ui.cpp:1341
+#: src/ui/Ui.cpp:1734
 msgid "Settings · About"
 msgstr ""
 
-#: src/ui/Ui.cpp:1341
+#: src/ui/Ui.cpp:1734
 msgid "Version comes from the VERSION macro; doable"
 msgstr ""
 
-#: src/ui/Ui.cpp:1343
+#: src/ui/Ui.cpp:1736
 msgid "Appearance"
 msgstr ""
 
-#: src/ui/Ui.cpp:1343
+#: src/ui/Ui.cpp:1736
 msgid "Settings · Appearance"
 msgstr ""
 
-#: src/ui/Ui.cpp:1344
+#: src/ui/Ui.cpp:1737
 msgid ""
 "Background can be pure black, follow the system, a custom color or an image"
 msgstr ""
 
-#: src/ui/Ui.cpp:1346
+#: src/ui/Ui.cpp:1739
 msgid "Overlay"
 msgstr ""
 
-#: src/ui/Ui.cpp:1346
+#: src/ui/Ui.cpp:1739
 msgid "Settings · Overlay"
 msgstr ""
 
-#: src/ui/Ui.cpp:1347
+#: src/ui/Ui.cpp:1740
 msgid "There is no in-game overlay on Linux → marked as not applicable"
 msgstr ""
 
-#: src/ui/Ui.cpp:1348
+#: src/ui/Ui.cpp:1741
 msgid "Onboarding"
 msgstr ""
 
-#: src/ui/Ui.cpp:1348
+#: src/ui/Ui.cpp:1741
 msgid "Settings · Onboarding"
 msgstr ""
 
-#: src/ui/Ui.cpp:1349
+#: src/ui/Ui.cpp:1742
 msgid "Onboarding flow is undecided"
 msgstr ""
 
-#: src/ui/Ui.cpp:1350
+#: src/ui/Ui.cpp:1743
 msgid "Presets"
 msgstr ""
 
-#: src/ui/Ui.cpp:1350
+#: src/ui/Ui.cpp:1743
 msgid "Settings · Global presets"
 msgstr ""
 
-#: src/ui/Ui.cpp:1351
+#: src/ui/Ui.cpp:1744
 msgid "Local preferences are doable; per-game switching has no game detection"
 msgstr ""
 
-#: src/ui/Ui.cpp:1353
+#: src/ui/Ui.cpp:1746
 msgid "Settings · Performance"
 msgstr ""
 
-#: src/ui/Ui.cpp:1354
+#: src/ui/Ui.cpp:1747
 msgid ""
 "Overclocking is limited by the EC (capability unknown); Windows power saving "
 "is not applicable"
 msgstr ""
 
-#: src/ui/Ui.cpp:1360
+#: src/ui/Ui.cpp:1753
 msgid "Home · Active"
 msgstr ""
 
-#: src/ui/Ui.cpp:1361
+#: src/ui/Ui.cpp:1754
 msgid ""
 "Power modes, lighting and brightness have working backends; the four ring "
 "gauges wait for the M1 telemetry layer"
 msgstr ""
 
-#: src/ui/Ui.cpp:1364
+#: src/ui/Ui.cpp:1757
 msgid "Overview and Thermal are sub-pages"
 msgstr ""
 
-#: src/ui/Ui.cpp:1366 src/ui/awcc.ui:82
+#: src/ui/Ui.cpp:1759 src/ui/awcc.ui:82
 msgid "ALIENFX™"
 msgstr ""
 
-#: src/ui/Ui.cpp:1366
+#: src/ui/Ui.cpp:1759
 msgid "Lighting and Key bindings are sub-pages"
 msgstr ""
 
-#: src/ui/Ui.cpp:1368 src/ui/awcc.ui:90
+#: src/ui/Ui.cpp:1761 src/ui/awcc.ui:90
 msgid "Macros"
 msgstr ""
 
-#: src/ui/Ui.cpp:1368
+#: src/ui/Ui.cpp:1761
 msgid "Not present upstream, so no backend exists"
 msgstr ""
 
-#: src/ui/Ui.cpp:1370 src/ui/awcc.ui:98
+#: src/ui/Ui.cpp:1763 src/ui/awcc.ui:98
 msgid "Library"
 msgstr ""
 
-#: src/ui/Ui.cpp:1371
+#: src/ui/Ui.cpp:1764
 msgid "No game scanning source on Linux; manual add or placeholder"
 msgstr ""
 
-#: src/ui/Ui.cpp:1372 src/ui/awcc.ui:112
+#: src/ui/Ui.cpp:1765 src/ui/awcc.ui:112
 msgid "Settings"
 msgstr ""
 
-#: src/ui/Ui.cpp:1372
+#: src/ui/Ui.cpp:1765
 msgid "Six sub-pages, per item in M4"
 msgstr ""
 
-#: src/ui/Ui.cpp:1374 src/ui/awcc.ui:120
+#: src/ui/Ui.cpp:1767 src/ui/awcc.ui:120
 msgid "Help"
 msgstr ""
 
-#: src/ui/Ui.cpp:1374
+#: src/ui/Ui.cpp:1767
 msgid "Content and links are undecided"
 msgstr ""
 
-#: src/ui/Ui.cpp:1381 src/ui/awcc.ui:44
+#: src/ui/Ui.cpp:1774 src/ui/awcc.ui:44
 msgid "System"
 msgstr ""
 

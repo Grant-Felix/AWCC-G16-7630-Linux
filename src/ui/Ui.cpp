@@ -2,12 +2,16 @@
 
 #include "AcpiUtils.h"
 #include "Config.h"
+#include "KeyBinds.h"
 #include "EffectController.h"
 #include "Thermals.h"
 #include "database.h"
 #include "helper.h"
 
 #include <adwaita.h>
+#include <glib-unix.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <glib/gi18n.h>
 #include <loguru.hpp>
 #include <algorithm>
@@ -21,6 +25,10 @@
 #include <vector>
 
 namespace {
+
+// 这两条在「与 daemon 的状态同步」那段里定义（在本文件靠后），前面的回调要用，先声明
+std::string stateCommand(const std::string &cmd);
+std::string modeKey(ThermalModes mode);
 
 // ── 图标随窗口缩放 ──────────────────────────────────────────────────────────
 // 需求：图标大小随窗口大小自动调整、长宽比不变。
@@ -91,6 +99,17 @@ struct AppContext {
     std::vector<GtkWidget *> modeLabels; // 显示「当前模式」的文字，改模式后一起刷新
     bool updatingModes = false;          // 刷新按钮状态期间别再回头触发一次设置
     size_t modeRowCount = 0;             // 建了几组模式按钮（自检报告用）
+    // 与 daemon 的状态订阅（DESIGN.md 第九节）：这里只保存「最近一次从后端收到的快照」，
+    // 控件从它渲染；set 只发命令、不做乐观更新，等广播回来再画。
+    int stateFd = -1;                    // 订阅连接
+    guint stateWatch = 0;
+    guint stateRetry = 0;
+    std::string stateBuffer;
+    GtkWidget *brightnessScale = nullptr;   // 订阅推来新亮度时要回填它
+    GtkWidget *brightnessLabel = nullptr;
+    bool updatingBrightness = false;        // 回填期间别把值再发回去
+    bool updatingKeybinds = false;          // 刷新下拉期间同上
+    std::function<void()> keybindRefresh;   // 绑定表变了就重读一次
     // 图标缩放
     // 用 deque 而不是 vector：buildModeCard 里会再 addIconGroup，vector 扩容会让先取的引用悬空
     std::deque<IconGroup> iconGroups;
@@ -291,7 +310,10 @@ GtkWidget *makeSliderRow(const char *rowLabel, GtkWidget *scale, GtkWidget *valu
 
 gboolean flushBrightness(gpointer data) {
     auto *ctx = static_cast<AppContext *>(data);
-    if (ctx->effects != nullptr) {
+    if (ctx->daemonRunning) {
+        // 交给 daemon：它才是这份状态的持有者，改完会广播回来（DESIGN.md 第九节）
+        stateCommand("brightness-set " + std::to_string(ctx->brightnessPending));
+    } else if (ctx->effects != nullptr) {
         ctx->effects->Brightness(static_cast<uint8_t>(ctx->brightnessPending));
     }
     ctx->brightnessTimer = 0;
@@ -318,6 +340,9 @@ gboolean flushGpuBoost(gpointer data) {
 
 void onBrightnessChanged(GtkRange *range, gpointer data) {
     auto *ctx = static_cast<AppContext *>(data);
+    if (ctx->updatingBrightness) {
+        return; // 这次变化是订阅回填引起的，不要再发回给 daemon
+    }
     ctx->brightness = static_cast<int>(gtk_range_get_value(range));
     ctx->brightnessPending = ctx->brightness;
     if (ctx->brightnessTimer == 0) {
@@ -380,6 +405,15 @@ void syncModeButtons(AppContext &ctx) {
 }
 
 void applyMode(AppContext &ctx, ThermalModes mode) {
+    // 真相在 daemon：只把命令发出去，等它的广播回来再重画（DESIGN.md 第九节）。
+    // 不做乐观更新，就不会出现「界面显示 A、硬件实际是 B」。
+    if (ctx.daemonRunning && !ctx.selftest) {
+        const std::string out = stateCommand("mode-set " + modeKey(mode));
+        if (out.rfind("ok", 0) == 0) {
+            return;
+        }
+        LOG_S(WARNING) << "mode-set 失败：" << out << "（退回本地路径）";
+    }
     // 自检（--ui-selftest）里一概不碰硬件：不写 ACPI 也不回读，避免弹授权框，也保证自检无副作用
     const bool touchHardware = !ctx.selftest && ctx.thermals != nullptr;
     if (touchHardware) {
@@ -434,6 +468,191 @@ GtkWidget *buildModeRow(AppContext &ctx) {
     ++ctx.modeRowCount;
     syncModeButtons(ctx);
     return row;
+}
+
+// ── 与 daemon 的状态同步（DESIGN.md 第九节）─────────────────────────────────
+//
+// 值的所有权在 daemon。这里只做两件事：把用户操作转成命令发出去；把后端推来的变更落到
+// store 并重画。GUI 自己不发乐观更新——否则会出现「界面显示 A、硬件实际是 B」。
+
+// 给 daemon 发一条命令并读回回复（短连接；工程里既有的套接字调用也是这条路）
+std::string stateCommand(const std::string &cmd) {
+    const int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) {
+        return {};
+    }
+    struct sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    std::snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", "/tmp/awcc.sock");
+    if (connect(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0) {
+        close(fd);
+        return {};
+    }
+    if (write(fd, cmd.c_str(), cmd.size()) < 0) {
+        close(fd);
+        return {};
+    }
+    std::string out;
+    char buf[512];
+    ssize_t n = 0;
+    while ((n = read(fd, buf, sizeof(buf) - 1)) > 0) {
+        out.append(buf, static_cast<size_t>(n));
+    }
+    close(fd);
+    return out;
+}
+
+std::string modeKey(ThermalModes mode) {
+    switch (mode) {
+    case ThermalModes::BatterySaver:
+        return "battery";
+    case ThermalModes::Cool:
+        return "cool";
+    case ThermalModes::Quiet:
+        return "quiet";
+    case ThermalModes::Performance:
+        return "performance";
+    case ThermalModes::Gmode:
+        return "gmode";
+    default:
+        return "balanced";
+    }
+}
+
+ThermalModes modeFromKey(const std::string &name) {
+    if (name == "battery") return ThermalModes::BatterySaver;
+    if (name == "cool") return ThermalModes::Cool;
+    if (name == "quiet") return ThermalModes::Quiet;
+    if (name == "performance") return ThermalModes::Performance;
+    if (name == "gmode") return ThermalModes::Gmode;
+    return ThermalModes::Balanced;
+}
+
+// 动作键 → 界面文字。模式类复用模式自己的标签，省一批 msgid。
+const char *actionLabel(const std::string &action) {
+    if (action == "none") {
+        return _("Do nothing");
+    }
+    if (action == "gmode-toggle") {
+        return _("Toggle G mode");
+    }
+    if (action == "brightness-cycle") {
+        return _("Cycle brightness");
+    }
+    const std::string prefix = "mode:";
+    if (action.rfind(prefix, 0) == 0) {
+        const ThermalModes mode = modeFromKey(action.substr(prefix.size()));
+        for (const ModeSpec &spec : kModes) {
+            if (spec.mode == mode) {
+                return _(spec.label);
+            }
+        }
+    }
+    return action.c_str();
+}
+
+// 把后端推来的一行落到 store 并重画（幂等：同样的值再推一次也无害）
+void applyStateLine(AppContext &ctx, const std::string &key, const std::string &value) {
+    if (key == "mode") {
+        ctx.currentMode = modeFromKey(value);
+        syncModeButtons(ctx);
+        return;
+    }
+    if (key == "brightness") {
+        int value100 = 50;
+        try {
+            value100 = std::stoi(value);
+        } catch (...) {
+            return;
+        }
+        ctx.brightness = std::clamp(value100, 0, 100);
+        if (ctx.brightnessScale != nullptr) {
+            // 回填期间把改动挡掉，免得又发一条 brightness-set 回去
+            ctx.updatingBrightness = true;
+            gtk_range_set_value(GTK_RANGE(ctx.brightnessScale), ctx.brightness);
+            ctx.updatingBrightness = false;
+        }
+        if (ctx.brightnessLabel != nullptr) {
+            gchar *text = g_strdup_printf("%d%%", ctx.brightness);
+            gtk_label_set_text(GTK_LABEL(ctx.brightnessLabel), text);
+            g_free(text);
+        }
+        return;
+    }
+    if (key == "keybinds") {
+        if (ctx.keybindRefresh) {
+            ctx.keybindRefresh();
+        }
+        return;
+    }
+}
+
+void stateClientStart(AppContext &ctx);
+
+gboolean onStateReadable(gint fd, GIOCondition cond, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    if ((cond & (G_IO_HUP | G_IO_ERR | G_IO_NVAL)) != 0) {
+        if (ctx->stateWatch != 0) {
+            g_source_remove(ctx->stateWatch);
+            ctx->stateWatch = 0;
+        }
+        close(fd);
+        ctx->stateFd = -1;
+        // daemon 可能刚重启：断线后 2 秒重连一次（这不是轮询，只在断了之后连）
+        ctx->stateRetry = g_timeout_add(
+            2000,
+            [](gpointer d) -> gboolean {
+                auto *c = static_cast<AppContext *>(d);
+                c->stateRetry = 0;
+                stateClientStart(*c);
+                return G_SOURCE_REMOVE;
+            },
+            ctx);
+        return G_SOURCE_REMOVE;
+    }
+    char buf[512];
+    const ssize_t n = read(fd, buf, sizeof(buf));
+    if (n <= 0) {
+        return G_SOURCE_CONTINUE;
+    }
+    ctx->stateBuffer.append(buf, static_cast<size_t>(n));
+    size_t pos = 0;
+    while ((pos = ctx->stateBuffer.find('\n')) != std::string::npos) {
+        const std::string line = ctx->stateBuffer.substr(0, pos);
+        ctx->stateBuffer.erase(0, pos + 1);
+        const size_t space = line.find(' ');
+        if (space == std::string::npos) {
+            continue;
+        }
+        applyStateLine(*ctx, line.substr(0, space), line.substr(space + 1));
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+void stateClientStart(AppContext &ctx) {
+    if (!ctx.daemonRunning || ctx.selftest || ctx.stateFd >= 0) {
+        return;
+    }
+    const int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) {
+        return;
+    }
+    struct sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    std::snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", "/tmp/awcc.sock");
+    if (connect(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0) {
+        close(fd);
+        return;
+    }
+    const std::string cmd = "subscribe";
+    if (write(fd, cmd.c_str(), cmd.size()) < 0) {
+        close(fd);
+        return;
+    }
+    ctx.stateFd = fd;
+    ctx.stateWatch = g_unix_fd_add(
+        fd, static_cast<GIOCondition>(G_IO_IN | G_IO_HUP | G_IO_ERR), onStateReadable, &ctx);
+    LOG_S(INFO) << "已订阅 daemon 状态（DESIGN 第九节）";
 }
 
 // ── 灯效 ────────────────────────────────────────────────────────────────────
@@ -533,6 +752,9 @@ GtkWidget *buildLightingCard(AppContext &ctx, bool withDuration) {
     gtk_range_set_value(GTK_RANGE(brightnessScale), ctx.brightness);
     gtk_scale_set_draw_value(GTK_SCALE(brightnessScale), FALSE);
     GtkWidget *brightnessValue = makeValueLabel();
+    // 订阅推来新亮度时要回填这两个控件（见 applyStateLine）
+    ctx.brightnessScale = brightnessScale;
+    ctx.brightnessLabel = brightnessValue;
     gchar *brightnessText = g_strdup_printf("%d%%", ctx.brightness);
     gtk_label_set_text(GTK_LABEL(brightnessValue), brightnessText);
     g_free(brightnessText);
@@ -1344,16 +1566,143 @@ GtkWidget *buildAboutPage(AppContext &ctx) {
     return wrapScrolled(content);
 }
 
+void onKeybindSelected(GObject *drop, GParamSpec *, gpointer data) {
+    auto *ctx = static_cast<AppContext *>(data);
+    if (ctx->updatingKeybinds) {
+        return; // 建行或刷新时设的值，不要再发回去
+    }
+    const int scan = GPOINTER_TO_INT(g_object_get_data(drop, "awcc-scan"));
+    const guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(drop));
+    const auto &actions = KeyBinds::AvailableActions();
+    if (selected >= actions.size()) {
+        return;
+    }
+    const std::string out =
+        stateCommand("keybind-set " + std::to_string(scan) + " " + actions[selected]);
+    auto *status = static_cast<GtkWidget *>(g_object_get_data(drop, "awcc-status"));
+    if (status != nullptr) {
+        gtk_label_set_text(GTK_LABEL(status),
+                           out.rfind("ok", 0) == 0 ? _("Saved") : _("Failed"));
+    }
+}
+
 GtkWidget *buildKeybindsPage(AppContext &ctx) {
-    (void)ctx;
     GtkWidget *content = makePageContent();
+
+    if (!ctx.daemonRunning) {
+        // 绑定表住在 daemon（读键盘的是它），daemon 没跑就只能给说明
+        GtkWidget *card = makeCard(N_("Hotkeys"), nullptr);
+        gtk_box_append(GTK_BOX(card),
+                       makeBadge(N_("Not available on this model"), "badge-na"));
+        gtk_box_append(GTK_BOX(card),
+                       makeLabel(N_("The daemon is not running, so bindings cannot be read or "
+                                    "written. They live in /etc/awcc/keybinds.conf."),
+                                 "card-note"));
+        gtk_box_append(GTK_BOX(content), card);
+        return wrapScrolled(content);
+    }
+
     GtkWidget *card = makeCard(N_("Hotkeys"), nullptr);
     gtk_box_append(GTK_BOX(card),
-                   makeBadge(N_("Under construction"), "badge-construction"));
+                   makeLabel(N_("Keys are matched by their EV_MSC scan code; on this model F4 "
+                                "and F6 send no keycode at all."),
+                             "card-note"));
     gtk_box_append(GTK_BOX(card),
-                   makeLabel(N_("The daemon owns the G key / light key listener; showing and "
-                                "editing bindings needs EC support (unconfirmed)."),
-                              "card-note"));
+                   makeLabel(N_("F2 sends KEY_MEDIA and F5 sends KEY_CAMERA, so the desktop may "
+                                "also react unless you unbind those shortcuts."),
+                             "card-note"));
+
+    auto rows = std::make_shared<std::vector<std::pair<int, GtkWidget *>>>();
+    const auto &actions = KeyBinds::AvailableActions();
+
+    std::vector<KeyBinds::Bind> binds;
+    {
+        std::istringstream ss(stateCommand("keybind-list"));
+        std::string line;
+        while (std::getline(ss, line)) {
+            const auto parsed = KeyBinds::ParseLine(line);
+            if (parsed) {
+                binds.push_back(*parsed);
+            }
+        }
+    }
+    if (binds.empty()) {
+        gtk_box_append(GTK_BOX(card),
+                       makeLabel(N_("Could not read the binding table from the daemon."),
+                                 "card-note"));
+        gtk_box_append(GTK_BOX(content), card);
+        return wrapScrolled(content);
+    }
+
+    for (const KeyBinds::Bind &bind : binds) {
+        GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+        gtk_widget_add_css_class(row, "info-row");
+
+        const char *keyLabel = KeyBinds::KeyLabel(bind.scan);
+        gchar *title = g_strdup_printf("%s (%d)", keyLabel != nullptr ? keyLabel : "?",
+                                       bind.scan);
+        GtkWidget *name = makeLabel(title, "row-label");
+        g_free(title);
+        gtk_widget_set_size_request(name, 160, -1);
+        gtk_box_append(GTK_BOX(row), name);
+
+        GtkStringList *items = gtk_string_list_new(nullptr);
+        for (const std::string &action : actions) {
+            gtk_string_list_append(items, actionLabel(action));
+        }
+        GtkWidget *drop = gtk_drop_down_new(G_LIST_MODEL(items), nullptr);
+        gtk_widget_set_hexpand(drop, true);
+        // 先设当前值再连信号：否则建行时就会触发一次「保存」
+        ctx.updatingKeybinds = true;
+        for (size_t i = 0; i < actions.size(); ++i) {
+            if (actions[i] == bind.action) {
+                gtk_drop_down_set_selected(GTK_DROP_DOWN(drop), i);
+                break;
+            }
+        }
+        ctx.updatingKeybinds = false;
+        // 注意不能用 makeLabel("")：它内部会走 _()，而 gettext("") 按约定返回的是
+        // 整个 .po 的头部（Project-Id-Version 那一坨），会当场渲染到界面上
+        GtkWidget *status = gtk_label_new("");
+        gtk_widget_add_css_class(status, "card-note");
+        g_object_set_data(G_OBJECT(drop), "awcc-scan", GINT_TO_POINTER(bind.scan));
+        g_object_set_data(G_OBJECT(drop), "awcc-status", status);
+        g_signal_connect(drop, "notify::selected", G_CALLBACK(onKeybindSelected), &ctx);
+        gtk_box_append(GTK_BOX(row), drop);
+        gtk_box_append(GTK_BOX(row), status);
+        gtk_box_append(GTK_BOX(card), row);
+        rows->emplace_back(bind.scan, drop);
+    }
+
+    // 后端广播 keybinds 变化时重读一遍（另一个 GUI 实例或命令行改过也会跟上）
+    ctx.keybindRefresh = [&ctx, rows] {
+        const std::string text = stateCommand("keybind-list");
+        std::map<int, std::string> current;
+        std::istringstream ss(text);
+        std::string line;
+        while (std::getline(ss, line)) {
+            const auto parsed = KeyBinds::ParseLine(line);
+            if (parsed) {
+                current[parsed->scan] = parsed->action;
+            }
+        }
+        const auto &list = KeyBinds::AvailableActions();
+        ctx.updatingKeybinds = true;
+        for (const auto &[scan, drop] : *rows) {
+            const auto it = current.find(scan);
+            if (it == current.end()) {
+                continue;
+            }
+            for (size_t i = 0; i < list.size(); ++i) {
+                if (list[i] == it->second) {
+                    gtk_drop_down_set_selected(GTK_DROP_DOWN(drop), i);
+                    break;
+                }
+            }
+        }
+        ctx.updatingKeybinds = false;
+    };
+
     gtk_box_append(GTK_BOX(content), card);
     return wrapScrolled(content);
 }
@@ -1698,6 +2047,8 @@ void onActivate(GtkApplication *app, gpointer userData) {
     } else if (navLeader != nullptr) {
         gtk_toggle_button_set_active(navLeader, TRUE); // 默认停在第一个页面
     }
+    // 建完页面再订阅：这份快照落地时，模式按钮与亮度控件都已登记好
+    stateClientStart(*ctx);
     gtk_window_present(GTK_WINDOW(ctx->window));
 
     if (ctx->selftest) {
