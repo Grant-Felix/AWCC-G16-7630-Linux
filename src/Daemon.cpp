@@ -345,14 +345,30 @@ bool Daemon::m_SetMode(const std::string &name) {
     if (!ModeFromName(name, mode)) {
         return false;
     }
+    std::string actual = name;
     if (m_thermals != nullptr) {
         m_thermals->setThermalMode(mode);
+        // 回读真实值：ACPI 写可能静默失败（例如之前 pkexec 那条路），状态不能因此说谎
+        const ThermalModes readBack = m_thermals->getCurrentMode();
+        if (readBack != mode) {
+            LOG_S(WARNING) << "模式没生效：请求 " << name << "，硬件回读仍是 "
+                           << static_cast<int>(readBack);
+        }
+        for (const auto &[m, n] :
+             std::initializer_list<std::pair<ThermalModes, const char *>>{
+                 {ThermalModes::BatterySaver, "battery"}, {ThermalModes::Cool, "cool"},
+                 {ThermalModes::Quiet, "quiet"}, {ThermalModes::Balanced, "balanced"},
+                 {ThermalModes::Performance, "performance"}, {ThermalModes::Gmode, "gmode"}}) {
+            if (m == readBack) {
+                actual = n;
+            }
+        }
     }
     {
         std::lock_guard<std::mutex> lock(m_stateMutex);
-        m_state.mode = name;
+        m_state.mode = actual;
     }
-    m_Broadcast("mode " + name + "\n");
+    m_Broadcast("mode " + actual + "\n");
     return true;
 }
 

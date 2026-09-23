@@ -304,6 +304,18 @@ do_install() {
     count="$(cd "$stage" && find . -type f | wc -l)"
     ok "共 $count 个文件"
 
+    # 覆盖已安装的二进制前必须先停服务：daemon 正在执行 /usr/bin/awcc 时，
+    # 直接 cp 会 ETXTBSY（"文本文件忙"）而**静默**失败——实测装完看着成功、其实还是旧二进制
+    local was_active=0
+    if [ -z "$INSTALL_ROOT" ] && systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+        was_active=1
+        info "先停掉 $SERVICE（它正占用 /usr/bin/awcc，不停就换不掉）"
+        sudo systemctl stop "$SERVICE" || warn "停止失败，继续尝试"
+    fi
+    if [ -z "$INSTALL_ROOT" ] && pgrep -x awcc >/dev/null 2>&1; then
+        warn "还有 awcc 进程在跑（多半是界面窗口）；关掉它更稳"
+    fi
+
     # 已有配置先留个备份：包管理器遇到改动过的配置会写 .pacnew，我们不覆盖用户的手改
     local db="${INSTALL_ROOT}/etc/awcc/database.json"
     if [ -e "$db" ]; then
@@ -312,11 +324,22 @@ do_install() {
     fi
 
     info "复制到 ${INSTALL_ROOT:-/}"
+    # 二进制先删再放：运行中的进程持有旧 inode，删掉名字不影响它；而直接覆盖写会 ETXTBSY
+    local bin_target="${INSTALL_ROOT}/usr/bin/awcc"
+    [ -n "$SUDO" ] && $SUDO rm -f "$bin_target" || rm -f "$bin_target"
+    local copied=0
     if [ -n "$SUDO" ]; then
-        $SUDO cp -a "$stage"/. "${INSTALL_ROOT}/"
+        $SUDO cp -a "$stage"/. "${INSTALL_ROOT}/" && copied=1
     else
-        cp -a "$stage"/. "${INSTALL_ROOT}/"
+        cp -a "$stage"/. "${INSTALL_ROOT}/" && copied=1
     fi
+    if [ "$copied" -eq 0 ]; then
+        err "复制失败（看上面 cp 的报错；若是"文本文件忙"，说明还有进程在跑这个二进制）"
+        [ "$was_active" -eq 1 ] && sudo systemctl start "$SERVICE" 2>/dev/null || true
+        rm -rf "$stage"
+        return 1
+    fi
+    ok "文件已就位"
 
     # 记清单（卸载据此删除）
     local manifest_dir
@@ -347,6 +370,10 @@ do_install() {
             sudo update-desktop-database -q /usr/share/applications 2>/dev/null || true
     else
         warn "装到了 $INSTALL_ROOT（测试用），跳过 systemd / udev 操作"
+    fi
+    # 刚才为覆盖二进制停过服务，这里恢复（若用户已选择启用启动，上面那条已经起来了）
+    if [ "$was_active" -eq 1 ] && ! systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+        sudo systemctl start "$SERVICE" && ok "$SERVICE 已重新启动"
     fi
 
     printf '\n安装完成。\n'
