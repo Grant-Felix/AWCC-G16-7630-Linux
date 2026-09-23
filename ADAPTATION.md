@@ -60,45 +60,28 @@ ninja -C build
 
 ## 五、安装
 
-### 5.1 发行版包（推荐）
+### 5.1 用 `install.sh`（推荐）
 
-三个发行版各用**各自官方的打包方案**：Debian 走 `debian/` + `dpkg-buildpackage`，Fedora 走
-`packaging/rpm/awcc.spec` + `rpmbuild`，Arch 走 `packaging/aur/PKGBUILD` + `makepkg`。本机是
-Arch，没有 debhelper/dpkg-dev 与 rpm-build，所以 `scripts/package.sh` 会在**对应发行版的官方
-镜像容器里**构建 deb 与 rpm（需要 docker），Arch 包直接本机打。
-
-包挂在 Release 上（`v26.9.22-3` 这批已挂（由 Forgejo Actions 构建）），安装命令：
+**发行版包已不再维护**：本 fork 只针对 G16 7630 验证过，同时跟进 deb / rpm / AUR 三套配方的
+成本高于收益（`debian/` 与 `packaging/` 只留作参考）。改用仓库根目录的交互式脚本：
 
 ```bash
-# Debian / Ubuntu
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc_26.9.22-3_amd64.deb
-sudo apt install ./awcc_26.9.22-3_amd64.deb
-
-# Fedora / RHEL
-sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-26.9.22-3.x86_64.rpm
-
-# Arch（预编译包）
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
-sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
-
-# Arch（AUR）：尚未发布——AUR 现在暂停新账户注册（HTTP 503，官方防自动化注册滥发），
-# 恢复前用上面那条 pacman -U，或拿仓库里的配方本地构建：
-cp -r packaging/aur /tmp/awcc-aur && cd /tmp/awcc-aur && makepkg -si
+./install.sh          # 数字菜单：构建并安装 / 只构建 / 检查依赖 / 卸载 / 退出
 ```
 
-国内把 URL 里的 `github.com/Grant-Felix` 换成 `gitee.com/Grant-Felix` 即可，产物同一份。
+它做四件事：**检查依赖**（按发行版给出该装什么）、**本机构建**（`cmake` + `ninja`，首次会联网
+拉依赖源码）、**安装到系统**（`/usr/bin`、`/etc/awcc`、udev 规则、systemd 单元，需要 sudo）、
+**记录文件清单**到 `/var/lib/awcc/installed-files.list`。卸载菜单按清单逐个删除，并询问是否保留
+配置与按键绑定——不会去猜"哪些文件可能是它装的"。
 
-**版本号在包管理器里的写法**（平台规则所限，映射关系固定）：Debian 直接用 `26.9.22-2`；
-RPM 拆成 `Version: 26.9.22` + `Release: 2`；Arch 的 `pkgver` 不许含连字符，写作 `26.9.22_2`
-（`pkgrel=1`）。RPM 的 `Release` 不加 `%{?dist}`，好让产物名与 tag 同串。
+安装前它会检查两种冲突：`/usr/bin/awcc` 被 pacman 包（上游 `awcc-bin` / `awcc-git`）占用、
+或 `/usr/local/bin/awcc` 有手动装的那份，并询问是否处理。
 
-**构建基线与最低版本**：deb 在 `debian:trixie` 里构建——bookworm 的 GTK 只有 4.8，而代码用了
-GTK 4.10 才有的 `GtkColorDialogButton`（libadwaita 也需要 ≥ 1.4），所以 bookworm 用户要么开
-backports、要么按 5.2 从源码构建。deb 依赖里的最低版本由 `dh_shlibdeps` 按符号自动算出；
-rpm 在 `fedora:latest` 里构建，Requires 写 `gtk4 / libadwaita / glib2`。
+不想动系统可以先试：
 
-**运行时前提**：Dell G16 7630；热模式/风扇需要 `acpi_call` 内核模块；udev 规则随包安装；
-守护进程用 `sudo systemctl enable --now awccd` 起来。
+```bash
+AWCC_INSTALL_ROOT=/tmp/awcc ./install.sh --install     # 装到别处，不碰 /usr 与 /etc
+```
 
 ### 5.2 从源码构建（不打包）
 

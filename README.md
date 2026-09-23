@@ -31,54 +31,26 @@ light effects, g-mode, and autoboost.
 
 ---
 
-## 📦 Install (prebuilt packages)
-
-Packages are attached to the [releases](https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases).
-Pick the one for your distribution — the commands download straight from the release:
-
-**Debian / Ubuntu (`.deb`)**
-
-```bash
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc_26.9.22-3_amd64.deb
-sudo apt install ./awcc_26.9.22-3_amd64.deb
-```
-
-**Fedora / RHEL (`.rpm`)**
-
-```bash
-sudo dnf install https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-26.9.22-3.x86_64.rpm
-```
-
-**Arch Linux (pacman, prebuilt)**
-
-```bash
-curl -LO https://github.com/Grant-Felix/AWCC-G16-7630-Linux/releases/download/v26.9.22-3/awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
-sudo pacman -U awcc-g16-7630-linux-26.9.22_3-1-x86_64.pkg.tar.zst
-```
-
-**Arch Linux (AUR)** — *not published yet*: AUR registration is temporarily
-closed (HTTP 503, an upstream anti-spam measure). Until it reopens, build from
-this repo's recipe instead:
+## 📦 Install (from source, interactive)
 
 ```bash
 git clone https://github.com/Grant-Felix/AWCC-G16-7630-Linux.git
-cp -r AWCC-G16-7630-Linux/packaging/aur /tmp/awcc-aur && cd /tmp/awcc-aur
-makepkg -si
+cd AWCC-G16-7630-Linux
+./install.sh
 ```
 
-Once published, `paru -S awcc-g16-7630-linux` and `yay -S awcc-g16-7630-linux`
-will work as usual.
+`install.sh` is a small interactive TUI: it checks the build dependencies, builds on your
+machine, installs into the system (`/usr/bin`, `/etc/awcc`, udev rules, systemd unit) and
+**records what it installed**, so the same script can uninstall it later (menu option 4).
+Uninstall keeps your config and key bindings unless you say otherwise.
 
-Mirror (mainland China): the same files are on
-[Gitee](https://gitee.com/Grant-Felix/AWCC-G16-7630-Linux/releases) — replace
-`github.com/Grant-Felix` with `gitee.com/Grant-Felix` in the URLs above.
+Flags for non-interactive use: `--check`, `--build`, `--install`, `--uninstall`.
+`AWCC_INSTALL_ROOT=/tmp/awcc ./install.sh --install` installs into another root without
+touching the system (handy for trying it out).
 
-> Arch note: the AUR `pkgver` cannot contain a hyphen, so the release `26.9.22-3`
-> appears as `26.9.22_3` there. RPM splits it into `Version: 26.9.22` / `Release: 2`.
-
-Runtime requirements: a Dell G16 7630, the `acpi_call` kernel module (for thermal
-modes / fan control) and the udev rules shipped by the package. The daemon runs as
-a systemd service: `sudo systemctl enable --now awccd`.
+> Distro packages (deb / rpm / AUR) are **no longer maintained**: this fork targets a single
+> laptop model, and keeping three packaging recipes in sync cost more than it was worth.
+> The old recipes are kept under `debian/` and `packaging/` for reference only.
 
 ## ✨ Features
 
