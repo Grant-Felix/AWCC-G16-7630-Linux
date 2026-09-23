@@ -262,12 +262,13 @@ install(
   FILES_MATCHING
   PATTERN "*.desktop")
 
-install(
-  DIRECTORY app/
-  DESTINATION /usr/share/icons
-  COMPONENT awcc
-  FILES_MATCHING
-  PATTERN "*.png")
+# 图标必须装进图标主题的目录结构里，Icon=awcc 才解析得到：散放在 /usr/share/icons/ 根下
+# 不算数（桌面按主题找名字，找不到就显示空图标——实测踩到）。app/awcc.png 是 512×512。
+install(FILES app/awcc.png
+        DESTINATION /usr/share/icons/hicolor/512x512/apps
+        COMPONENT awcc)
+# pixmaps 是各桌面都认的兜底位置
+install(FILES app/awcc.png DESTINATION /usr/share/pixmaps COMPONENT awcc)
 
 install(FILES app/70-awcc.rules DESTINATION ${UDEV_RULES_DIR} COMPONENT awcc)
 

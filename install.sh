@@ -324,6 +324,13 @@ do_install() {
     fi
 
     info "复制到 ${INSTALL_ROOT:-/}"
+    # 老版本把图标散放在主题根目录下（Icon=awcc 解析不到，显示空图标），顺手清掉
+    local legacy_icon="${INSTALL_ROOT}/usr/share/icons/awcc.png"
+    if [ -e "$legacy_icon" ]; then
+        [ -n "$SUDO" ] && $SUDO rm -f "$legacy_icon" || rm -f "$legacy_icon"
+        warn "清掉了旧位置的空图标残留 $legacy_icon"
+    fi
+
     # 二进制先删再放：运行中的进程持有旧 inode，删掉名字不影响它；而直接覆盖写会 ETXTBSY
     local bin_target="${INSTALL_ROOT}/usr/bin/awcc"
     [ -n "$SUDO" ] && $SUDO rm -f "$bin_target" || rm -f "$bin_target"
@@ -364,8 +371,9 @@ do_install() {
             warn "稍后可手动：sudo systemctl enable --now $SERVICE"
         fi
         # 这两条是 pacman 的钩子会自动做的，脚本安装得自己来，否则菜单里可能看不到图标
+        # 图标缓存在主题目录里（hicolor），不是 /usr/share/icons 根目录
         command -v gtk-update-icon-cache >/dev/null 2>&1 && \
-            sudo gtk-update-icon-cache -q -t -f /usr/share/icons 2>/dev/null || true
+            sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || true
         command -v update-desktop-database >/dev/null 2>&1 && \
             sudo update-desktop-database -q /usr/share/applications 2>/dev/null || true
     else
